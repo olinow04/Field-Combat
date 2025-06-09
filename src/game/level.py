@@ -10,11 +10,6 @@ from .enemy import Shooter, Chaser, Captor, Helicopter
 from .crosshair import Crosshair
 from .allied_unit import AlliedUnit
 
-PORTAL_WIDTH = 60
-PORTAL_HEIGHT = 40
-PORTAL_COLOR = (255, 0, 255)
-PORTAL_Y = 10
-
 class Level:
     REINFORCEMENT_TYPES = [
         "infantry", "tank", "artillery", "helicopter",
@@ -45,6 +40,7 @@ class Level:
             1: pygame.image.load(os.path.join(image_dir, 'field_1.png')).convert(),
             2: pygame.image.load(os.path.join(image_dir, 'field_2.png')).convert()
         }
+        self.portal_img = pygame.image.load(os.path.join(image_dir, 'portal.png')).convert_alpha()
         # opcjonalne skalowanie do rozmiaru ekranu
         for lvl, img in self.field_imgs.items():
             self.field_imgs[lvl] = pygame.transform.scale(img, (SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -58,7 +54,7 @@ class Level:
         for attr in (
             'genesis_img', 'enemy_helicopter_img', 'enemy_solider_img', 'enemy_tank_img',
             'ally_solider_img', 'ally_helicopter_img', 'ally_tank_img',
-            'alien_helicopter_img', 'alien_solider_img', 'captor_img', 'shooter_img'
+            'alien_helicopter_img', 'alien_solider_img', 'captor_img', 'shooter_img', 'portal_img'
         ):
             img = getattr(self, attr)
             setattr(self, attr, pygame.transform.scale(img, (60, 60)))
@@ -86,13 +82,12 @@ class Level:
         self.captor_spawn_at = random.randint(60, 300)
 
         self.portal_active   = False
-        self.portal_rect     = pygame.Rect(
-            SCREEN_WIDTH // 2 - PORTAL_WIDTH // 2,
-            PORTAL_Y,
-            PORTAL_WIDTH,
-            PORTAL_HEIGHT
-        )
-        self.portal_timer    = 0
+        self.portal_timer = 0
+        self.portal_rect = self.portal_img.get_rect(midtop=(
+            SCREEN_WIDTH // 2,
+            50
+        ))
+
         self.genesis_migrate = False
         self.bg_color        = bg_color or (30, 30, 30)
 
@@ -291,7 +286,7 @@ class Level:
         self.enemies.draw(self.screen)
 
         if self.portal_active:
-            pygame.draw.rect(self.screen, PORTAL_COLOR, self.portal_rect, 3)
+            self.screen.blit(self.portal_img, self.portal_rect)
             font = pygame.font.SysFont("Arial", 24)
             self.screen.blit(font.render(f"Wynik: {self.score}", True, (255,255,255)), (10,10))
             self.screen.blit(font.render(f"Sojusznicy: {len(self.allies)}", True, (0,255,0)), (10,40))
