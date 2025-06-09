@@ -38,7 +38,8 @@ class Level:
         self.bullet_img            = pygame.image.load(os.path.join(image_dir, 'bullet.png')).convert_alpha()
         self.field_imgs = {
             1: pygame.image.load(os.path.join(image_dir, 'field_1.png')).convert(),
-            2: pygame.image.load(os.path.join(image_dir, 'field_2.png')).convert()
+            2: pygame.image.load(os.path.join(image_dir, 'field_2.png')).convert(),
+            3: pygame.image.load(os.path.join(image_dir, 'field_3.png')).convert()
         }
         self.portal_img = pygame.image.load(os.path.join(image_dir, 'portal.png')).convert_alpha()
         # opcjonalne skalowanie do rozmiaru ekranu
