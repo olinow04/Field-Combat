@@ -3,12 +3,13 @@ from src.game.unit import Unit                       # importujemy klasę bazow�
 from src.game.bullet import Bullet                   # importujemy klasę Bullet reprezentującą pocisk
 
 class Player(Unit):                                  # definiujemy klasę gracza dziedziczącą po Unit
-    SPEED = 4                                        # stała prędkość ruchu gracza (piksele na klatkę)
+    SPEED = 3                                       # stała prędkość ruchu gracza (piksele na klatkę)
 
-    def __init__(self, position, sprite):
+    def __init__(self, position, sprite,bullet_sprite):
         super().__init__(position, sprite)          # wywołujemy konstruktor Unit z pozycją i grafiką
         self.velocity = pygame.math.Vector2(0, 0)    # wektor prędkości, na początku zerowy
-        self.hp = 3                                   # punkty życia gracza
+        self.hp = 4                                # punkty życia gracza
+        self.bullet_sprite = bullet_sprite
 
     def handle_input(self):
         # obsługa klawiatury do ruchu gracza
@@ -28,12 +29,11 @@ class Player(Unit):                                  # definiujemy klasę gracza
             self.velocity.y = self.SPEED             # ruch w dół zwiększa współrzędną y
 
     def shoot(self):
-        # tworzenie pocisku wystrzelonego przez gracza
-        bullet_sprite = pygame.Surface((5, 5))        # tworzymy mały kwadrat 5×5 pikseli
-        bullet_sprite.fill((255, 0, 0))               # wypełniamy go kolorem czerwonym
-        direction = pygame.math.Vector2(0, -10)       # definiujemy wektor ruchu pocisku w górę
-        return Bullet(self.rect.center, bullet_sprite, direction)
-                                                     # tworzymy obiekt Bullet i zwracamy go
+        return Bullet(
+            self.rect.center,
+            self.bullet_sprite,
+            pygame.math.Vector2(0, -10)
+        )
 
     def update(self):
         self.handle_input()                           # najpierw obsługujemy wejście od gracza

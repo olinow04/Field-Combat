@@ -52,40 +52,52 @@ class Shooter(Enemy):                    # wróg, który strzela w stronę gracz
 
 
 class Chaser(Enemy):
-    def __init__(self, position, sprite, target, bullet_group):
+    def __init__(self, position, sprite, target, bullet_group, enemy_type="infantry"):
         super().__init__(position, sprite)
+        self.enemy_type = enemy_type
         self.target = target
         self.bullet_group = bullet_group
-        self.speed = random.uniform(1.5, 2.8)  # indywidualna prędkość
-        self.pause_time = random.randint(40, 90)  # ile klatek postoi
-        self.move_time = random.randint(60, 140)  # ile klatek idzie
+
+        # Statystyki wg typu jednostki
+        if self.enemy_type == "tank":
+            self.hp = 2
+            self.speed = 1.3
+            self.attack_interval = 90  # co 1.5 sekundy (60 FPS)
+            self.last_attack = 0
+            self.bullet_speed = 4
+        else:  # infantry
+            self.hp = 1
+            self.speed = random.uniform(1.8, 2.5)
+
+        # Wspólne parametry
+        self.pause_time = random.randint(40, 90)
+        self.move_time = random.randint(60, 140)
         self.timer = 0
         self.paused = False
-        self.horizontal_dir = random.choice([-1, 1])  # kierunek startowy poziomy
-        self.horizontal_change_timer = random.randint(60, 180)  # co ile zmienia kierunek
+        self.horizontal_dir = random.choice([-1, 1])
+        self.horizontal_change_timer = random.randint(60, 180)
         self.horizontal_timer = 0
 
     def update(self):
-        # Unikanie pocisków
+        # Unikanie pocisków tylko dla infantry
         dodge_vector = pygame.math.Vector2(0, 0)
-        min_dist = 80  # dystans wykrywania pocisku
-        for bullet in self.bullet_group:
-            bullet_vec = pygame.math.Vector2(bullet.rect.center) - pygame.math.Vector2(self.rect.center)
-            if 0 < bullet_vec.length() < min_dist:
-                # jeśli pocisk leci w stronę chasera (przybliżony test)
-                if abs(bullet_vec.angle_to(bullet.velocity)) > 150:
-                    # uciekaj w bok
-                    dodge = pygame.math.Vector2(-bullet_vec.y, bullet_vec.x).normalize()
-                    dodge_vector += dodge
+        if self.enemy_type == "infantry":
+            min_dist = 80
+            for bullet in self.bullet_group:
+                bullet_vec = pygame.math.Vector2(bullet.rect.center) - pygame.math.Vector2(self.rect.center)
+                if 0 < bullet_vec.length() < min_dist:
+                    if abs(bullet_vec.angle_to(bullet.velocity)) > 150:
+                        dodge = pygame.math.Vector2(-bullet_vec.y, bullet_vec.x).normalize()
+                        dodge_vector += dodge
 
-        # Losowa zmiana kierunku poziomego co pewien czas
+        # Losowa zmiana kierunku poziomego
         self.horizontal_timer += 1
         if self.horizontal_timer > self.horizontal_change_timer:
             self.horizontal_dir *= -1
             self.horizontal_change_timer = random.randint(60, 180)
             self.horizontal_timer = 0
 
-        # Zatrzymywanie się co jakiś czas
+        # Logika ruchu
         self.timer += 1
         if self.paused:
             self.velocity = pygame.math.Vector2(0, 0)
@@ -94,26 +106,54 @@ class Chaser(Enemy):
                 self.timer = 0
                 self.move_time = random.randint(60, 140)
         else:
-            # Ruch w stronę gracza + poziomy dryf + unik
             to_player = pygame.math.Vector2(self.target.rect.center) - pygame.math.Vector2(self.rect.center)
             if to_player.length() > 0:
                 move_vec = to_player.normalize() * self.speed
-                # Dodaj ruch poziomy (prawo-lewo po planszy)
-                move_vec.x += self.horizontal_dir * 1.3
-                # Dodaj unik jeśli trzeba
-                if dodge_vector.length() > 0:
+                move_vec.x += self.horizontal_dir * (0.8 if self.enemy_type == "tank" else 1.3)
+
+                if self.enemy_type == "infantry" and dodge_vector.length() > 0:
                     move_vec += dodge_vector.normalize() * 2.5
+
                 self.velocity = move_vec
+
+                # Atak dla czołgów
+                if self.enemy_type == "tank":
+                    self.last_attack += 1
+                    if self.last_attack >= self.attack_interval:
+                        self._shoot()
+                        self.last_attack = 0
+
             if self.timer > self.move_time:
                 self.paused = True
                 self.timer = 0
                 self.pause_time = random.randint(40, 90)
+
         super().update()
+
+    def _shoot(self):
+        """Strzelanie tylko dla czołgów"""
+        if self.enemy_type == "tank":
+            direction = pygame.math.Vector2(self.target.rect.center) - pygame.math.Vector2(self.rect.center)
+            if direction.length() > 0:
+                direction = direction.normalize()
+                bullet = Bullet(
+                    self.rect.center,
+                    self._create_bullet_sprite(),
+                    direction * self.bullet_speed
+                )
+                self.bullet_group.add(bullet)
+
+    def _create_bullet_sprite(self):
+        """Tworzy sprite pocisku w kolorze odpowiadającym typowi"""
+        color = (255, 0, 0) if self.enemy_type == "tank" else (0, 255, 0)
+        surf = pygame.Surface((6, 6), pygame.SRCALPHA)
+        pygame.draw.circle(surf, color, (3, 3), 3)
+        return surf
 
 
 class Helicopter(Enemy):                 # szybki wróg, który zmienia stan: podejście, atak, ucieczka
     """Helikopter - zbliża się po skosie, atakuje z bliska, potem ucieka."""
-    SPEED = 4                             # prędkość podejścia
+    SPEED = 3                             # prędkość podejścia
     CLOSE_DIST = 180                     # odległość, przy której zaczyna atak
     MAX_SHOTS = 3                        # ile strzałów odda w fazie ataku
     ESCAPE_SPEED = 6                     # prędkość ucieczki w fazie ESCAPE
@@ -204,9 +244,9 @@ class Captor(Enemy):
     UFO (Captor) – ma 20 punktów życia, nie ginie od beam,
     nie można go przechwycić. Po MAX_HP trafieniach zostaje zniszczony.
     """
-    SPEED = 4
+    SPEED = 3
     SHOOT_INTERVAL = 120
-    MAX_HP = 20                           # ile trafień wytrzymuje
+    MAX_HP = 10                          # ile trafień wytrzymuje
 
     def __init__(self, position, sprite, allies_group, bullet_group):
         super().__init__(position, sprite)               # inicjalizacja pozycji i sprite

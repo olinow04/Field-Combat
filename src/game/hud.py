@@ -1,7 +1,5 @@
 # src/game/hud.py
 
-import pygame
-
 def draw_hud(screen, font, score, allies_count, lives):
     score_surf = font.render(f"Wynik: {score}", True, (255, 255, 255))
     allies_surf = font.render(f"Sojusznicy: {allies_count}", True, (0, 255, 0))

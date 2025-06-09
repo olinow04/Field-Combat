@@ -8,7 +8,6 @@ from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
 from .player import Player
 from .enemy import Shooter, Chaser, Captor, Helicopter
 from .crosshair import Crosshair
-from .beam import Beam
 from .allied_unit import AlliedUnit
 
 PORTAL_WIDTH = 60
@@ -18,62 +17,87 @@ PORTAL_Y = 10
 
 class Level:
     REINFORCEMENT_TYPES = [
-        "infantry", "tank", "artillery",
-        "helicopter", "infantry", "tank"
+        "infantry", "tank", "artillery", "helicopter",
+        "infantry", "tank"
     ]
 
     def __init__(self, screen, number, score_manager, bg_color=None):
         self.screen = screen
         self.number = number
         self.score_manager = score_manager
-        #
-        # # ----- ŁADOWANIE GRAFIK -----
+
+        # ścieżka do obrazków
         project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
         image_dir = os.path.join(project_root, 'image')
-        # Główne postacie
-        self.genesis_img = pygame.image.load(os.path.join(image_dir, 'genesis.png')).convert_alpha()
-        self.enemy_helicopter_img = pygame.image.load(os.path.join(image_dir, 'enemy_helicopter.png')).convert_alpha()
-        self.enemy_solider_img = pygame.image.load(os.path.join(image_dir, 'enemy_solider.png')).convert_alpha()
-        self.ally_solider_img = pygame.image.load(os.path.join(image_dir, 'ally_solider.png')).convert_alpha()
-        # (opcjonalnie skalowanie, np. do 30x30 px)
-        self.genesis_img = pygame.transform.scale(self.genesis_img, (80, 80))
-        self.enemy_helicopter_img = pygame.transform.scale(self.enemy_helicopter_img, (80, 80))
-        self.enemy_solider_img = pygame.transform.scale(self.enemy_solider_img, (80, 80))
-        self.ally_solider_img = pygame.transform.scale(self.ally_solider_img, (80, 80))
 
-        # Inicjalizacja gracza (Genesis)
-        self.player = Player(
-            (SCREEN_WIDTH // 2, SCREEN_HEIGHT - 100),
-            self.genesis_img
-        )
+        # wczytanie sprite'ów
+        self.genesis_img           = pygame.image.load(os.path.join(image_dir, 'genesis.png')).convert_alpha()
+        self.enemy_helicopter_img  = pygame.image.load(os.path.join(image_dir, 'enemy_helicopter.png')).convert_alpha()
+        self.enemy_solider_img     = pygame.image.load(os.path.join(image_dir, 'enemy_solider.png')).convert_alpha()
+        self.enemy_tank_img        = pygame.image.load(os.path.join(image_dir, 'enemy_tank.png')).convert_alpha()
+        self.ally_solider_img      = pygame.image.load(os.path.join(image_dir, 'ally_solider.png')).convert_alpha()
+        self.ally_helicopter_img   = pygame.image.load(os.path.join(image_dir, 'ally_helicopter.png')).convert_alpha()
+        self.ally_tank_img         = pygame.image.load(os.path.join(image_dir, 'ally_tank.png')).convert_alpha()
+        self.captor_img            = pygame.image.load(os.path.join(image_dir, 'captor.png')).convert_alpha()
+        self.shooter_img            = pygame.image.load(os.path.join(image_dir, 'shooter.png')).convert_alpha()
+        self.bullet_img            = pygame.image.load(os.path.join(image_dir, 'bullet.png')).convert_alpha()
+        self.field_imgs = {
+            1: pygame.image.load(os.path.join(image_dir, 'field_1.png')).convert(),
+            2: pygame.image.load(os.path.join(image_dir, 'field_2.png')).convert()
+        }
+        # opcjonalne skalowanie do rozmiaru ekranu
+        for lvl, img in self.field_imgs.items():
+            self.field_imgs[lvl] = pygame.transform.scale(img, (SCREEN_WIDTH, SCREEN_HEIGHT))
+
+
+        # aliasy wrogich grafik (możesz zmienić na własne pliki alien_*.png)
+        self.alien_helicopter_img = self.enemy_helicopter_img
+        self.alien_solider_img    = self.enemy_solider_img
+
+        # skalowanie do 80×80
+        for attr in (
+            'genesis_img', 'enemy_helicopter_img', 'enemy_solider_img', 'enemy_tank_img',
+            'ally_solider_img', 'ally_helicopter_img', 'ally_tank_img',
+            'alien_helicopter_img', 'alien_solider_img', 'captor_img', 'shooter_img'
+        ):
+            img = getattr(self, attr)
+            setattr(self, attr, pygame.transform.scale(img, (60, 60)))
+            self.bullet_img = pygame.transform.scale(self.bullet_img, (15, 15))
+
+        # inicjalizacja gracza
+        self.player = Player((SCREEN_WIDTH // 2, SCREEN_HEIGHT - 100), self.genesis_img, self.bullet_img)
         self.player.hp = 10
 
-        self.crosshair = Crosshair(self.player)
-        self.bullets = pygame.sprite.Group()
-        self.enemy_bullets = pygame.sprite.Group()
-        self.ally_bullets = pygame.sprite.Group()
-        self.beams = pygame.sprite.Group()
-        self.allies = pygame.sprite.Group()
-        self.enemies = pygame.sprite.Group()
+        # grupy sprite'ów
+        self.crosshair          = Crosshair(self.player)
+        self.bullets            = pygame.sprite.Group()
+        self.enemy_bullets      = pygame.sprite.Group()
+        self.ally_bullets       = pygame.sprite.Group()
+        self.allies             = pygame.sprite.Group()
+        self.enemies            = pygame.sprite.Group()
+
         self.reinforcement_queue = list(self.REINFORCEMENT_TYPES)
         self._space_pressed = False
-        self._b_pressed = False
-        self._c_pressed = False
-        self.frame_count = 0
-        self.captor_spawned = False
+        self._b_pressed     = False
+        self._c_pressed     = False
+        self.frame_count    = 0
+
+        self.captor_spawned  = False
         self.captor_spawn_at = random.randint(60, 300)
-        self.portal_active = False
-        self.portal_rect = pygame.Rect(
+
+        self.portal_active   = False
+        self.portal_rect     = pygame.Rect(
             SCREEN_WIDTH // 2 - PORTAL_WIDTH // 2,
             PORTAL_Y,
             PORTAL_WIDTH,
             PORTAL_HEIGHT
         )
-        self.portal_timer = 0
+        self.portal_timer    = 0
         self.genesis_migrate = False
-        self.bg_color = (30, 30, 30) if bg_color is None else bg_color
-        self._spawn_enemies()
+        self.bg_color        = bg_color or (30, 30, 30)
+
         self.score = 0
+        self._spawn_enemies()
 
     def _create_sprite(self, color, size=(30, 30)):
         surf = pygame.Surface(size, pygame.SRCALPHA)
@@ -81,229 +105,194 @@ class Level:
         return surf
 
     def _spawn_enemies(self):
-        shooter_positions = [
-            (SCREEN_WIDTH // 5 * 1, 100),
-            (SCREEN_WIDTH // 5 * 2, 100),
-            (SCREEN_WIDTH // 5 * 3, 100),
-            (SCREEN_WIDTH // 5 * 4, 100)
-        ]
-        # Shooterzy (klasyczny czerwony prostokąt)
+        # Shooterzy
+        shooter_positions = [(SCREEN_WIDTH // 5 * i, 100) for i in range(1, 5)]
         for pos in shooter_positions:
             self.enemies.add(Shooter(
                 pos,
-                self._create_sprite((255, 0, 0)),
+                self.shooter_img,
                 self.player,
                 self.enemy_bullets
             ))
 
-        helicopter_positions = []
-        num_helicopters = self.number
-        spacing = SCREEN_WIDTH // (num_helicopters + 1)
-        for h in range(num_helicopters):
-            x = spacing * (h + 1)
-            helicopter_positions.append((x, 40))
+        # Helikoptery i Chaserzy
+        helicopter_positions = [
+            (SCREEN_WIDTH // (self.number + 1) * (i + 1), 40)
+            for i in range(self.number)
+        ]
 
         for i in range(self.number * 3):
             x = 50 + (i * 70) % (SCREEN_WIDTH - 100)
             y = 150 + (i // 10) * 60
-            if i % 5 == 4 and len(helicopter_positions) > 0:
-                # HELIKOPTER: używamy grafiki alien_helicopter_img
+
+            if i % 5 == 4 and helicopter_positions:
+                # wróg-helikopter
                 self.enemies.add(Helicopter(
                     helicopter_positions.pop(),
-                    self.enemy_helicopter_img,
+                    self.alien_helicopter_img,
                     self.player,
                     self.enemy_bullets
                 ))
             else:
+                # co trzeci Chaser to czołg, reszta – piechota
+                if i % 3 == 0:
+                    sprite, etype = self.enemy_tank_img, "tank"
+                else:
+                    sprite, etype = self.enemy_solider_img, "infantry"
 
+                # <-- Tutaj kluczowa zmiana: przekazujemy self.enemy_bullets -->
                 self.enemies.add(Chaser(
                     (x, y),
-                    self.enemy_solider_img,
+                    sprite,
                     self.player,
-                    self.bullets
+                    self.enemy_bullets,
+                    enemy_type=etype
                 ))
 
     def run(self):
         clock = pygame.time.Clock()
-        next_bg_color = self.bg_color
+
         while True:
             self.frame_count += 1
             for ev in pygame.event.get():
                 if ev.type == pygame.QUIT:
                     return None
+
             keys = pygame.key.get_pressed()
+            # strzały gracza
             if keys[pygame.K_SPACE] and not keys[pygame.K_b]:
                 if not self._space_pressed:
                     b = self.player.shoot()
-                    if b:
-                        self.bullets.add(b)
-                    self._space_pressed = True
+                    if b: self.bullets.add(b)
+                self._space_pressed = True
             else:
                 self._space_pressed = False
-            if keys[pygame.K_b] and not keys[pygame.K_SPACE]:
-                if not self._b_pressed:
-                    beam = Beam(self.player.rect.center, self.crosshair.rect.center)
-                    self.beams.add(beam)
-                    self._b_pressed = True
-            else:
-                self._b_pressed = False
 
-            if keys[pygame.K_c]:
-                if not self._c_pressed and self.reinforcement_queue and len(self.allies) < 6:
-                    unit_type = self.reinforcement_queue.pop(0)
-                    spawn_pos = (self.player.rect.centerx, self.player.rect.top - 30)
-                    # PRZEKAZUJEMY GRAFIKĘ alien_solider_img tylko dla infantry
-                    if unit_type == "infantry":
-                        ally = AlliedUnit(spawn_pos, unit_type, self.enemies, self.ally_bullets, sprite=self.ally_solider_img)
-                    else:
-                        ally = AlliedUnit(spawn_pos, unit_type, self.enemies, self.ally_bullets)
-                    self.allies.add(ally)
-                    self._c_pressed = True
-            else:
+            # przywołanie sojusznika
+            if keys[pygame.K_c] and not self._c_pressed and self.reinforcement_queue and len(self.allies) < 6:
+                unit_type = self.reinforcement_queue.pop(0)
+                spawn = (self.player.rect.centerx, self.player.rect.top - 30)
+                if unit_type == "infantry":
+                    sprite = self.ally_solider_img
+                elif unit_type == "helicopter":
+                    sprite = self.ally_helicopter_img
+                elif unit_type == "tank":
+                    sprite = self.ally_tank_img
+                else:
+                    sprite = None
+                ally = AlliedUnit(spawn, unit_type, self.enemies, self.ally_bullets, sprite=sprite)
+                self.allies.add(ally)
+                self._c_pressed = True
+            elif not keys[pygame.K_c]:
                 self._c_pressed = False
 
-            if not self.captor_spawned and self.frame_count >= self.captor_spawn_at and len(self.allies) > 0:
+            # pojawienie Captora
+            if not self.captor_spawned and self.frame_count >= self.captor_spawn_at and self.allies:
                 pos = (random.randint(100, SCREEN_WIDTH - 100), 40)
-                cap_spr = self._create_sprite((255, 255, 0), (30, 30))
-                self.enemies.add(
-                    Captor(pos, cap_spr, self.allies, self.enemy_bullets)
-                )
+                cap_spr = self.captor_img
+                self.enemies.add(Captor(pos, cap_spr, self.allies, self.enemy_bullets))
                 self.captor_spawned = True
 
-            next_level, next_bg_color = self._update_logic()
-            if next_level is None:
+            # logika i kolizje
+            result = self._update_logic()
+            if result is None:
                 return None
-            elif next_level != self.number:
-                return next_level, next_bg_color
+            if result[0] != self.number:
+                return result
 
             self._draw()
             pygame.display.flip()
             clock.tick(60)
 
     def _update_logic(self):
+        # aktualizacja wszystkich grup
         self.player.update()
         self.crosshair.update()
         self.bullets.update()
         self.enemy_bullets.update()
         self.ally_bullets.update()
-        self.beams.update()
         self.allies.update()
         self.enemies.update()
 
-        # Kolizje pocisków gracza z wrogami
-        for b in self.bullets:
-            hits = pygame.sprite.spritecollide(b, self.enemies, False)
-            for enemy in hits:
-                if isinstance(enemy, Captor):
-                    enemy.take_damage()
-                    if enemy.hp <= 0:
-                        self.score += 50  # UFO zniszczone
-                elif isinstance(enemy, Shooter):
-                    enemy.kill()
+        # 1) pociski gracza i sojuszników vs wrogowie
+        for group, pts in [(self.bullets, 10), (self.ally_bullets, 5)]:
+            for b in list(group):
+                hits = pygame.sprite.spritecollide(b, self.enemies, False)
+                for enemy in hits:
+                    # UFO
+                    if isinstance(enemy, Captor):
+                        enemy.take_damage()
+                        if enemy.hp <= 0:
+                            enemy.kill()
+                            self.score += 50
+                    # Strzelec
+                    elif isinstance(enemy, Shooter):
+                        enemy.kill()
+                    # Chaser: rozróżnij tank vs infantry
+                    elif isinstance(enemy, Chaser):
+                        if enemy.enemy_type == "tank":
+                            enemy.hp -= 1
+                            if enemy.hp <= 0:
+                                enemy.kill()
+                                self.score += pts * 2  # więcej za czołg
+                        else:
+                            enemy.kill()
+                            self.score += pts
+                    else:
+                        enemy.kill()
+                        self.score += pts
                     b.kill()
-                    # brak punktów za Shooter!
-                    continue
-                else:
-                    enemy.kill()
-                    self.score += 10  # standardowy wróg
-                b.kill()
 
-        # Kolizje promienia z wrogami (przechwytywanie Chaserów)
-        for beam in self.beams:
-            hits = pygame.sprite.spritecollide(beam, self.enemies, False)
-            for enemy in hits:
-                if isinstance(enemy, Chaser):        # tylko Chaser można przechwycić
-                    coord = enemy.rect.center
-                    if len(self.allies) < 6:
-                        ally = AlliedUnit(coord, "infantry", self.enemies, self.ally_bullets)
-                        self.allies.add(ally)       # staje się nowym sojusznikiem
-                        enemy.kill()                # usuwamy wroga
-                        beam.kill()                 # usuwamy promień
-
-        # Kolizje pocisków wrogów z graczem
-        for b in self.enemy_bullets:
-            if pygame.sprite.collide_rect(b, self.player):
-                b.kill()
-                self.player.hp -= 1                 # gracz traci życie
+        # 2) wrogie pociski vs gracz
+        for eb in list(self.enemy_bullets):
+            if pygame.sprite.collide_rect(eb, self.player):
+                eb.kill()
+                self.player.hp -= 1
                 if self.player.hp <= 0:
-                    return None, self.bg_color      # koniec gry
+                    return None
 
-        # Kolizje pocisków sojuszników z wrogami
-        for b in self.ally_bullets:
-            hits = pygame.sprite.spritecollide(b, self.enemies, False)
-            for enemy in hits:
-                if isinstance(enemy, Captor):
-                    enemy.take_damage()
-                    if enemy.hp <= 0:
-                        self.score += 50
-                elif isinstance(enemy, Shooter):
-                    enemy.kill()
-                    b.kill()
-                    continue
-                else:
-                    enemy.kill()
-                    self.score += 5  # sojusznik zabija – mniej punktów
-                b.kill()
+        # 3) bezpośredni kontakt gracz–wróg
+        if pygame.sprite.spritecollide(self.player, self.enemies, False):
+            return None
 
-        # Kolizje wrogów z graczem przy bezpośrednim kontakcie
-        for e in self.enemies:
-            if pygame.sprite.collide_rect(e, self.player):
-                return None, self.bg_color          # gracz ginie przy kontakcie
-
-        # LOGIKA PORTALU ---
+        # 4) portal i zakończenie poziomu
         if not self.portal_active:
-            # sprawdzamy, czy wszyscy Shooterzy zostali pokonani
-            shooters_alive = any(isinstance(e, Shooter) for e in self.enemies)
-            if not shooters_alive:
-                self.portal_active = True            # uruchamiamy portal
+            if not any(isinstance(e, Shooter) for e in self.enemies):
+                self.portal_active = True
 
-        # sprawdzenie, czy gracz wszedł w obszar portalu
         if self.portal_active and self.player.rect.colliderect(self.portal_rect):
             self.genesis_migrate = True
-        if self.portal_timer > 120:
-            next_bg_color = (
-                random.randint(0, 255),
-                random.randint(0, 255),
-                random.randint(0, 255)
-            )
-            self.score += 1000  # bonus za ukończenie poziomu
-            self.score_manager.save_score(self.score)
-            return self.number + 1, next_bg_color
 
-        # efekt migania gracza w portalu przed przeniesieniem
         if self.genesis_migrate:
             self.portal_timer += 1
-            alpha = 128 + 127 * (self.portal_timer % 20 < 10)
-            self.player.image.set_alpha(alpha)     # pulsująca przezroczystość
-            if self.portal_timer > 120:            # po 2 sekundach
-                next_bg_color = (
+            if self.portal_timer > 120:
+                self.score_manager.save_score(self.score)
+                next_bg = (
                     random.randint(0, 255),
                     random.randint(0, 255),
                     random.randint(0, 255)
-                )                                  # losujemy nowy kolor tła
-                self.score_manager.save_score(self.score)  # zapisujemy wynik
-                return self.number + 1, next_bg_color
-        else:
-            self.player.image.set_alpha(255)        # pełna widoczność, jeśli nie w portalu
+                )
+                return self.number + 1, next_bg
 
-        return self.number, self.bg_color          # brak zmiany poziomu
+        return self.number, self.bg_color
 
     def _draw(self):
-        self.screen.fill(self.bg_color)
+        bg = self.field_imgs.get(self.number)
+        if bg:
+            self.screen.blit(bg, (0, 0))
+        else:
+            self.screen.fill(self.bg_color)
         self.player.draw(self.screen)
         self.crosshair.draw(self.screen)
         self.bullets.draw(self.screen)
         self.enemy_bullets.draw(self.screen)
         self.ally_bullets.draw(self.screen)
-        self.beams.draw(self.screen)
         self.allies.draw(self.screen)
         self.enemies.draw(self.screen)
+
         if self.portal_active:
             pygame.draw.rect(self.screen, PORTAL_COLOR, self.portal_rect, 3)
-        font = pygame.font.SysFont("Arial", 24)
-        score_surf = font.render(f"Wynik: {self.score}", True, (255, 255, 255))
-        self.screen.blit(score_surf, (10, 10))
-        allies_surf = font.render(f"Sojusznicy: {len(self.allies)}", True, (0, 255, 0))
-        lives_surf = font.render(f"Życia: {self.player.hp}", True, (255, 0, 0))
-        self.screen.blit(allies_surf, (10, 40))
-        self.screen.blit(lives_surf, (10, 70))
+            font = pygame.font.SysFont("Arial", 24)
+            self.screen.blit(font.render(f"Wynik: {self.score}", True, (255,255,255)), (10,10))
+            self.screen.blit(font.render(f"Sojusznicy: {len(self.allies)}", True, (0,255,0)), (10,40))
+            self.screen.blit(font.render(f"Życia: {self.player.hp}", True, (255,0,0)), (10,70))
