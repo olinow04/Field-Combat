@@ -33,25 +33,69 @@ def show_start_screen(screen):
         screen.blit(press_start, press_start_rect)
         pygame.display.flip()
 
+
+def show_end_screen(screen, score, is_victory):
+    screen.fill((0, 0, 0))
+    font_big = pygame.font.SysFont("Arial", 48)
+    font = pygame.font.SysFont("Arial", 24)
+
+    # Nagłówek
+    title = "GRATULACJE!" if is_victory else "KONIEC GRY"
+    title_surf = font_big.render(title, True, (255, 255, 0))
+    title_rect = title_surf.get_rect(centerx=screen.get_width() // 2, y=100)
+    screen.blit(title_surf, title_rect)
+
+    # Wynik końcowy
+    score_text = f"Końcowy wynik: {score}"
+    score_surf = font.render(score_text, True, (255, 255, 255))
+    score_rect = score_surf.get_rect(centerx=screen.get_width() // 2, y=200)
+    screen.blit(score_surf, score_rect)
+
+    # Instrukcja wyjścia
+    exit_surf = font.render("Naciśnij ENTER aby wyjść", True, (128, 128, 128))
+    exit_rect = exit_surf.get_rect(centerx=screen.get_width() // 2, bottom=screen.get_height() - 50)
+    screen.blit(exit_surf, exit_rect)
+
+    pygame.display.flip()
+
+    waiting = True
+    while waiting:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    return
+        pygame.time.wait(10)
+
+
 def main():
     pygame.init()
     screen = pygame.display.set_mode((800, 600))
     pygame.display.set_caption("Field Combat Clone")
 
-    show_start_screen(screen)  # <--- DODAJ TO WYWOŁANIE
+    show_start_screen(screen)
 
     font = pygame.font.SysFont("Arial", 24)
     score_manager = ScoreManager()
     level_number = 1
     bg_color = (30, 30, 30)
+    final_score = 0
+
     while True:
         level = Level(screen, level_number, score_manager, bg_color)
         result = level.run()
-        draw_hud(screen, font, level.score, len(level.allies), level.player.hp)
         if result is None:
+            # Przegrana
+            show_end_screen(screen, level.score, False)
             break
         else:
             level_number, bg_color = result
+            final_score = level.score
+
         if level_number > NUM_LEVELS:
+            # Wygrana - wszystkie poziomy ukończone
+            show_end_screen(screen, final_score, True)
             break
+
     pygame.quit()

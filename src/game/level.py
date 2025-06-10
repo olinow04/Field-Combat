@@ -5,10 +5,13 @@ import random
 import os
 
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
+from .bullet import PlayerBullet
 from .player import Player
 from .enemy import Shooter, Chaser, Captor, Helicopter
 from .crosshair import Crosshair
 from .allied_unit import AlliedUnit
+from src.game.explosion import Explosion
+
 
 class Level:
     REINFORCEMENT_TYPES = [
@@ -25,7 +28,15 @@ class Level:
         project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
         image_dir = os.path.join(project_root, 'image')
 
+        # Inicjalizacja obrazków eksplozji
+        explosion_img = pygame.image.load(os.path.join(image_dir, 'explosion.png')).convert_alpha()
+
+        # Skalowanie eksplozji do rozmiaru celownika (32x32)
+        explosion_img = pygame.transform.scale(explosion_img, (32, 32))
+        Explosion.images = [explosion_img, pygame.transform.flip(explosion_img, 1, 1)]
+
         # wczytanie sprite'ów
+        self.explosions = pygame.sprite.Group()
         self.genesis_img           = pygame.image.load(os.path.join(image_dir, 'genesis.png')).convert_alpha()
         self.enemy_helicopter_img  = pygame.image.load(os.path.join(image_dir, 'enemy_helicopter.png')).convert_alpha()
         self.enemy_solider_img     = pygame.image.load(os.path.join(image_dir, 'enemy_solider.png')).convert_alpha()
@@ -61,17 +72,26 @@ class Level:
             setattr(self, attr, pygame.transform.scale(img, (60, 60)))
             self.bullet_img = pygame.transform.scale(self.bullet_img, (15, 15))
 
+        # grupy sprite'ów
+        self.bullets = pygame.sprite.Group()
+        self.enemy_bullets = pygame.sprite.Group()
+        self.ally_bullets = pygame.sprite.Group()
+        self.allies = pygame.sprite.Group()
+        self.enemies = pygame.sprite.Group()
+        self.explosions = pygame.sprite.Group()  # nowa grupa dla eksplozji
+
+        # Tworzymy celownik z pozycją początkową
+        self.crosshair = Crosshair((SCREEN_WIDTH // 2, SCREEN_HEIGHT - 250))
+
         # inicjalizacja gracza
-        self.player = Player((SCREEN_WIDTH // 2, SCREEN_HEIGHT - 100), self.genesis_img, self.bullet_img)
+        self.player = Player((SCREEN_WIDTH // 2, SCREEN_HEIGHT - 100),
+                             self.genesis_img,
+                             self.bullet_img)
         self.player.hp = 10
 
-        # grupy sprite'ów
-        self.crosshair          = Crosshair(self.player)
-        self.bullets            = pygame.sprite.Group()
-        self.enemy_bullets      = pygame.sprite.Group()
-        self.ally_bullets       = pygame.sprite.Group()
-        self.allies             = pygame.sprite.Group()
-        self.enemies            = pygame.sprite.Group()
+        # Ustawiamy wzajemne referencje
+        self.crosshair.player = self.player
+        self.player.crosshair = self.crosshair
 
         self.reinforcement_queue = list(self.REINFORCEMENT_TYPES)
         self._space_pressed = False
@@ -158,7 +178,13 @@ class Level:
             # strzały gracza
             if keys[pygame.K_SPACE] and not keys[pygame.K_b]:
                 if not self._space_pressed:
-                    b = self.player.shoot()
+                    b = PlayerBullet(
+                        self.player.rect.center,
+                        self.bullet_img,
+                        pygame.math.Vector2(0, -10),
+                        self.crosshair,
+                        self.explosions  # przekazujemy grupę eksplozji
+                    )
                     if b: self.bullets.add(b)
                 self._space_pressed = True
             else:
@@ -209,12 +235,17 @@ class Level:
         self.ally_bullets.update()
         self.allies.update()
         self.enemies.update()
+        self.explosions.update()
 
         # 1) pociski gracza i sojuszników vs wrogowie
         for group, pts in [(self.bullets, 10), (self.ally_bullets, 5)]:
             for b in list(group):
                 hits = pygame.sprite.spritecollide(b, self.enemies, False)
                 for enemy in hits:
+                    # Tworzymy eksplozję w miejscu trafienia
+                    explosion = Explosion(enemy.rect.center)
+                    self.explosions.add(explosion)
+
                     # UFO
                     if isinstance(enemy, Captor):
                         enemy.take_damage()
@@ -239,17 +270,28 @@ class Level:
                         self.score += pts
                     b.kill()
 
-        # 2) wrogie pociski vs gracz
-        for eb in list(self.enemy_bullets):
-            if pygame.sprite.collide_rect(eb, self.player):
-                eb.kill()
-                self.player.hp -= 1
-                if self.player.hp <= 0:
-                    return None
+            # 2) wrogie pociski vs gracz
+            for eb in list(self.enemy_bullets):
+                if pygame.sprite.collide_rect(eb, self.player):
+                    explosion = Explosion(eb.rect.center)
+                    self.explosions.add(explosion)
+                    eb.kill()
+                    self.player.hp -= 1
+                    if self.player.hp <= 0:
+                        # Dodajemy opóźnienie przed zakończeniem
+                        self._draw()  # rysujemy ostatnią klatkę
+                        pygame.display.flip()
+                        pygame.time.wait(1000)  # czekamy sekundę
+                        return None
 
-        # 3) bezpośredni kontakt gracz–wróg
-        if pygame.sprite.spritecollide(self.player, self.enemies, False):
-            return None
+            # 3) bezpośredni kontakt gracz–wróg
+            if pygame.sprite.spritecollide(self.player, self.enemies, False):
+                explosion = Explosion(self.player.rect.center)
+                self.explosions.add(explosion)
+                self._draw()
+                pygame.display.flip()
+                pygame.time.wait(1000)
+                return None
 
         # 4) portal i zakończenie poziomu
         if not self.portal_active:
@@ -285,10 +327,14 @@ class Level:
         self.ally_bullets.draw(self.screen)
         self.allies.draw(self.screen)
         self.enemies.draw(self.screen)
+        self.explosions.draw(self.screen)
 
+        # Zawsze wyświetlaj informacje o punktach, sojusznikach i życiu
+        font = pygame.font.SysFont("Arial", 24)
+        self.screen.blit(font.render(f"Wynik: {self.score}", True, (255, 255, 255)), (10, 10))
+        self.screen.blit(font.render(f"Sojusznicy: {len(self.allies)}", True, (0, 255, 0)), (10, 40))
+        self.screen.blit(font.render(f"Życia: {self.player.hp}", True, (255, 0, 0)), (10, 70))
+
+        # Portal wyświetlany tylko gdy jest aktywny
         if self.portal_active:
             self.screen.blit(self.portal_img, self.portal_rect)
-            font = pygame.font.SysFont("Arial", 24)
-            self.screen.blit(font.render(f"Wynik: {self.score}", True, (255,255,255)), (10,10))
-            self.screen.blit(font.render(f"Sojusznicy: {len(self.allies)}", True, (0,255,0)), (10,40))
-            self.screen.blit(font.render(f"Życia: {self.player.hp}", True, (255,0,0)), (10,70))

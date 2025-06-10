@@ -1,9 +1,10 @@
+from src.settings import NUM_LEVELS
 
 # Podstawowa konfiguracja gry
 
 # Ustawienia okna
-WINDOW_WIDTH = 800
-WINDOW_HEIGHT = 600
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
 WINDOW_TITLE = "Moja Gra"
 
 # Kolory (RGB)
@@ -20,5 +21,5 @@ SOUNDS_DIR = ASSETS_DIR + "/sounds"
 
 # Ustawienia gracza
 PLAYER_SPEED = 5
-PLAYER_START_X = WINDOW_WIDTH // 2
-PLAYER_START_Y = WINDOW_HEIGHT // 2
+PLAYER_START_X = SCREEN_WIDTH // 2
+PLAYER_START_Y = SCREEN_HEIGHT // 2
