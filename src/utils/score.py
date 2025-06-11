@@ -1,18 +1,23 @@
-import os
-
 class ScoreManager:
-    def __init__(self, filename='scores.txt'):
-        self.filename = filename
-        self.scores = []
-        if os.path.exists(self.filename):
-            with open(self.filename, 'r') as f:
-                for line in f:
-                    try:
-                        self.scores.append(int(line.strip()))
-                    except ValueError:
-                        pass
+    def __init__(self):
+        self.score = 0
+
+    def add_score(self, points):
+        """Dodaje punkty do wyniku"""
+        self.score += points
+
+    def get_current_score(self):
+        """Zwraca aktualny wynik"""
+        return self.score
+
+    def get_score(self):
+        """Alias dla get_current_score()"""
+        return self.score
 
     def save_score(self, score):
-        self.scores.append(score)
-        with open(self.filename, 'a') as f:
-            f.write(f"{score}\n")
+        """Zapisuje wynik (dla kompatybilności)"""
+        self.score = max(self.score, score)
+
+    def reset_score(self):
+        """Resetuje wynik do zera"""
+        self.score = 0
