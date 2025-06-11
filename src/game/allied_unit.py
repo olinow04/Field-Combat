@@ -28,7 +28,7 @@ class AlliedUnit(Unit):
         },
     }
 
-    def __init__(self, position, unit_type, target_group, bullet_group, sprite=None):
+    def __init__(self, position, unit_type, target_group, bullet_group,bullet_sprite, sprite=None):
         stats = self.TYPE_STATS.get(unit_type, self.TYPE_STATS["infantry"])
         self.speed = stats["speed"]
         used_sprite = sprite if sprite is not None else pygame.Surface((30, 30), pygame.SRCALPHA)
@@ -39,6 +39,7 @@ class AlliedUnit(Unit):
         self.shoot_timer = 0
         self.shoot_interval = stats["shoot_interval"]
         self.bullet_speed = stats["bullet_speed"]
+        self.bullet_sprite = bullet_sprite
 
         # Dla helikoptera: stan i zmienne ruchu
         if self.type == "helicopter":
@@ -137,7 +138,4 @@ class AlliedUnit(Unit):
         self.bullet_group.add(bullet)
 
     def _make_bullet_sprite(self):
-        # Prosty biały pocisk (6x6 px)
-        surf = pygame.Surface((6, 6), pygame.SRCALPHA)
-        pygame.draw.circle(surf, (255, 255, 255), (3, 3), 3)
-        return surf
+        return self.bullet_sprite
