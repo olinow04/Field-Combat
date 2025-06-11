@@ -9,9 +9,10 @@ class Enemy(Unit):                       # definiujemy klasę bazową wszystkich
     """Bazowa klasa dla wszystkich przeciwników w grze."""
     SPEED = 2                            # domyślna prędkość ruchu wroga
 
-    def __init__(self, position, sprite):
+    def __init__(self, position, sprite, bullet_sprite=None):
         super().__init__(position, sprite)               # inicjalizujemy Unit: pozycja i obraz
         self.velocity = pygame.math.Vector2(0, 0)         # wektor prędkości, na początku zerowy
+        self.bullet_sprite = bullet_sprite
 
     def update(self):
         # przesuwamy prostokąt (rect) o wektor prędkości
@@ -20,8 +21,8 @@ class Enemy(Unit):                       # definiujemy klasę bazową wszystkich
 
 class Shooter(Enemy):                    # wróg, który strzela w stronę gracza w stałych odstępach
     """Strzelec - wróg strzelający w kierunku gracza w regularnych odstępach czasu."""
-    def __init__(self, position, sprite, target, bullet_group):
-        super().__init__(position, sprite)               # inicjalizacja pozycji i sprite
+    def __init__(self, position, sprite, target, bullet_group, bullet_sprite=None):
+        super().__init__(position, sprite, bullet_sprite)               # inicjalizacja pozycji i sprite
         self.target = target                              # obiekt gracza, w stronę którego strzelamy
         self.bullet_group = bullet_group                  # grupa, do której dodajemy wystrzelone pociski
         self.timer = 0                                    # licznik klatek od startu
@@ -44,16 +45,16 @@ class Shooter(Enemy):                    # wróg, który strzela w stronę gracz
         super().update()                                 # przesuwamy wroga zgodnie z velocity
 
     def make_bullet_sprite(self):
-        # tworzymy mały surface 6×6 z przezroczystością
+        if self.bullet_sprite:
+            return self.bullet_sprite
+        # Fallback do starego kółka jeśli nie ma sprite'a
         surf = pygame.Surface((6, 6), pygame.SRCALPHA)
-        # rysujemy kółko w kolorze cyjanowym
         pygame.draw.circle(surf, (0, 255, 255), (3, 3), 3)
-        return surf                                     # zwracamy grafiki pocisku
-
+        return surf
 
 class Chaser(Enemy):
-    def __init__(self, position, sprite, target, bullet_group, enemy_type="infantry"):
-        super().__init__(position, sprite)
+    def __init__(self, position, sprite, target, bullet_group, enemy_type="infantry", bullet_sprite=None):
+        super().__init__(position, sprite,  bullet_sprite)
         self.enemy_type = enemy_type
         self.target = target
         self.bullet_group = bullet_group
@@ -144,22 +145,23 @@ class Chaser(Enemy):
                 self.bullet_group.add(bullet)
 
     def _create_bullet_sprite(self):
-        """Tworzy sprite pocisku w kolorze odpowiadającym typowi"""
+        if self.bullet_sprite:
+            return self.bullet_sprite
+        # Fallback do kolorowych kółek
         color = (255, 0, 0) if self.enemy_type == "tank" else (0, 255, 0)
         surf = pygame.Surface((6, 6), pygame.SRCALPHA)
         pygame.draw.circle(surf, color, (3, 3), 3)
         return surf
-
 
 class Helicopter(Enemy):                 # szybki wróg, który zmienia stan: podejście, atak, ucieczka
     """Helikopter - zbliża się po skosie, atakuje z bliska, potem ucieka."""
     SPEED = 3                             # prędkość podejścia
     CLOSE_DIST = 180                     # odległość, przy której zaczyna atak
     MAX_SHOTS = 3                        # ile strzałów odda w fazie ataku
-    ESCAPE_SPEED = 6                     # prędkość ucieczki w fazie ESCAPE
+    ESCAPE_SPEED = 5# prędkość ucieczki w fazie ESCAPE
 
-    def __init__(self, position, sprite, target, bullet_group):
-        super().__init__(position, sprite)               # inicjalizacja Unit
+    def __init__(self, position, sprite, target, bullet_group, bullet_sprite=None):
+        super().__init__(position, sprite, bullet_sprite)               # inicjalizacja Unit
         self.target = target                              # obiekt gracza
         self.bullet_group = bullet_group                  # grupa pocisków
         self.shot_counter = 0                             # licznik oddanych strzałów
@@ -234,7 +236,9 @@ class Helicopter(Enemy):                 # szybki wróg, który zmienia stan: po
         self.bullet_group.add(bullet)
 
     def _create_bullet_sprite(self):
-        # tworzymy sprite pocisku: większe kółko o kolorze czerwonym
+        if self.bullet_sprite:
+            return self.bullet_sprite
+        # Fallback do czerwonego kółka
         surf = pygame.Surface((8, 8), pygame.SRCALPHA)
         pygame.draw.circle(surf, (255, 50, 50), (4, 4), 4)
         return surf
@@ -248,8 +252,8 @@ class Captor(Enemy):
     SHOOT_INTERVAL = 120
     MAX_HP = 10                          # ile trafień wytrzymuje
 
-    def __init__(self, position, sprite, allies_group, bullet_group):
-        super().__init__(position, sprite)               # inicjalizacja pozycji i sprite
+    def __init__(self, position, sprite, allies_group, bullet_group, bullet_sprite=None):
+        super().__init__(position, sprite, bullet_sprite)               # inicjalizacja pozycji i sprite
         self.allies_group = allies_group                  # grupa sojuszników, których ma porywać
         self.bullet_group = bullet_group                  # grupa, do której dodaje pociski
         self.timer = 0                                    # licznik klatek od startu
@@ -297,7 +301,9 @@ class Captor(Enemy):
             self.kill()
 
     def make_bullet_sprite(self):
-        # alternatywny pocisk dla Captora: fioletowy kolor
+        if self.bullet_sprite:
+            return self.bullet_sprite
+        # Fallback do fioletowego kółka
         surf = pygame.Surface((6, 6), pygame.SRCALPHA)
         pygame.draw.circle(surf, (255, 0, 255), (3, 3), 3)
         return surf

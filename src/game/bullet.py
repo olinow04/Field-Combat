@@ -1,4 +1,5 @@
 
+
 # game/bullet.py
 
 import pygame                                       # importujemy bibliotekę pygame do obsługi grafiki i wektorów
