@@ -25,7 +25,7 @@ def show_end_screen(screen, score, is_victory):
         try:
             end_screen_path = os.path.join(project_root, 'image', 'end_screen.png')
             end_screen_img = pygame.image.load(end_screen_path).convert_alpha()
-            end_screen_img = pygame.transform.scale(end_screen_img, (500, 200))
+            end_screen_img = pygame.transform.scale(end_screen_img, (800, 600))
             end_screen_rect = end_screen_img.get_rect(centerx=screen.get_width() // 2, y=50)
             screen.blit(end_screen_img, end_screen_rect)
         except pygame.error:
@@ -39,7 +39,7 @@ def show_end_screen(screen, score, is_victory):
         try:
             game_over_path = os.path.join(project_root, 'image', 'game_over.png')
             game_over_img = pygame.image.load(game_over_path).convert_alpha()
-            game_over_img = pygame.transform.scale(game_over_img, (500, 200))
+            game_over_img = pygame.transform.scale(game_over_img, (800, 600))
             game_over_rect = game_over_img.get_rect(centerx=screen.get_width() // 2, y=50)
             screen.blit(game_over_img, game_over_rect)
         except pygame.error:
@@ -50,13 +50,13 @@ def show_end_screen(screen, score, is_victory):
             screen.blit(title_surf, title_rect)
 
     # Wyświetl wynik końcowy
-    score_text = f"Końcowy wynik: {score}"
+    score_text = f"Final Score: {score}"
     score_surf = font.render(score_text, True, (255, 255, 255))
-    score_rect = score_surf.get_rect(centerx=screen.get_width() // 2, y=300)
+    score_rect = score_surf.get_rect(centerx=screen.get_width() // 2, y=490)
     screen.blit(score_surf, score_rect)
 
     # Instrukcja wyjścia
-    exit_surf = font.render("Naciśnij ENTER aby wyjść", True, (128, 128, 128))
+    exit_surf = font.render("press ENTER to exit", True, (128, 128, 128))
     exit_rect = exit_surf.get_rect(centerx=screen.get_width() // 2, bottom=screen.get_height() - 50)
     screen.blit(exit_surf, exit_rect)
 

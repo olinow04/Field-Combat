@@ -306,13 +306,13 @@ class Level:
         self.screen.blit(self.bg_img, (0, 0))
 
         self.player.draw(self.screen)
-        self.crosshair.draw(self.screen)
         self.bullets.draw(self.screen)
         self.enemy_bullets.draw(self.screen)
         self.ally_bullets.draw(self.screen)
         self.allies.draw(self.screen)
         self.enemies.draw(self.screen)
         self.explosions.draw(self.screen)
+        self.crosshair.draw(self.screen)
 
         self._draw_portal()
         self._draw_hud()
@@ -400,7 +400,7 @@ class Level:
         # 4) portal i zakończenie poziomu
         if not self.portal_active:
             shooters_left = [e for e in self.enemies if isinstance(e, Shooter)]
-            if len(shooters_left) == 1 and not self.levelup_played:
+            if len(shooters_left) == 0 and not self.levelup_played:
                 # Dźwięk level up gdy zostaje ostatni shooter
                 self.audio.play_sound('levelup_audio')
                 self.levelup_played = True
@@ -432,6 +432,7 @@ class Level:
                     return None
 
             keys = pygame.key.get_pressed()
+            self.crosshair.update()
 
             # strzały gracza
             if keys[pygame.K_SPACE] and not keys[pygame.K_b]:

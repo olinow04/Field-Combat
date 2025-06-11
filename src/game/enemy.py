@@ -52,8 +52,6 @@ class Shooter(Enemy):                    # wróg, który strzela w stronę gracz
         pygame.draw.circle(surf, (0, 255, 255), (3, 3), 3)
         return surf
 
-
-
 class Chaser(Enemy):
     def __init__(self, position, sprite, target, bullet_group, enemy_type="infantry", bullet_sprite=None):
         super().__init__(position, sprite,  bullet_sprite)
@@ -160,7 +158,7 @@ class Helicopter(Enemy):                 # szybki wróg, który zmienia stan: po
     SPEED = 3                             # prędkość podejścia
     CLOSE_DIST = 180                     # odległość, przy której zaczyna atak
     MAX_SHOTS = 3                        # ile strzałów odda w fazie ataku
-    ESCAPE_SPEED = 6                     # prędkość ucieczki w fazie ESCAPE
+    ESCAPE_SPEED = 5# prędkość ucieczki w fazie ESCAPE
 
     def __init__(self, position, sprite, target, bullet_group, bullet_sprite=None):
         super().__init__(position, sprite, bullet_sprite)               # inicjalizacja Unit
