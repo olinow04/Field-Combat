@@ -20,9 +20,10 @@ class Crosshair(pygame.sprite.Sprite):
         self.player = None
 
     def update(self):
-        # Celownik podąża za myszką
-        mouse_pos = pygame.mouse.get_pos()
-        self.rect.center = mouse_pos
+        """Aktualizacja pozycji celownika względem gracza"""
+        if hasattr(self, 'player') and self.player is not None:
+            self.rect.center = self.player.rect.center + pygame.math.Vector2(0, -150)
 
     def draw(self, screen):
+        """Rysuje celownik na podanej powierzchni"""
         screen.blit(self.image, self.rect)
