@@ -12,11 +12,10 @@ from .audio_manager import get_audio_manager
 
 
 class Level:
-    def __init__(self, screen, number, score_manager, bg_color=None):
+    def __init__(self, screen, number, score_manager):
         self.screen = screen
         self.number = number
         self.score_manager = score_manager
-        self.bg_color = bg_color or (50, 50, 50)
 
         # Inicjalizacja audio managera
         self.audio = get_audio_manager()
@@ -259,7 +258,7 @@ class Level:
                     sprite, etype = self.enemy_soldier_img, "infantry"
 
                 self.enemies.add(Chaser(
-                    (x, y),
+            (x, y),
                     sprite,
                     self.player,
                     self.enemy_bullets,
@@ -435,7 +434,7 @@ class Level:
             self.crosshair.update()
 
             # strzały gracza
-            if keys[pygame.K_SPACE] and not keys[pygame.K_b]:
+            if keys[pygame.K_SPACE]:
                 if not self._space_pressed:
                     b = PlayerBullet(
                         self.player.rect.center,

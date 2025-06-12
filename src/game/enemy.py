@@ -26,7 +26,7 @@ class Shooter(Enemy):                    # wróg, który strzela w stronę gracz
         self.target = target                              # obiekt gracza, w stronę którego strzelamy
         self.bullet_group = bullet_group                  # grupa, do której dodajemy wystrzelone pociski
         self.timer = 0                                    # licznik klatek od startu
-        self.interval = 130                               # co ile klatek oddajemy strzał (≈2,16 s przy 60 FPS)
+        self.interval = 180                               # co ile klatek oddajemy strzał (≈2,16 s przy 60 FPS)
 
     def update(self):
         self.timer += 1                                   # zwiększamy licznik klatek
@@ -47,10 +47,6 @@ class Shooter(Enemy):                    # wróg, który strzela w stronę gracz
     def make_bullet_sprite(self):
         if self.bullet_sprite:
             return self.bullet_sprite
-        # Fallback do starego kółka jeśli nie ma sprite'a
-        surf = pygame.Surface((6, 6), pygame.SRCALPHA)
-        pygame.draw.circle(surf, (0, 255, 255), (3, 3), 3)
-        return surf
 
 class Chaser(Enemy):
     def __init__(self, position, sprite, target, bullet_group, enemy_type="infantry", bullet_sprite=None):

@@ -6,7 +6,7 @@ class AudioManager:
     def __init__(self):
         pygame.mixer.init()
         self.sounds = {}
-        self.music_volume = 0.7
+        self.music_volume = 0.5
         self.sfx_volume = 0.5
         self.background_music = None
         self.is_background_playing = False
