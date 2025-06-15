@@ -1,10 +1,10 @@
-# ui/menu.py
 import pygame
 from src.config import WHITE, BLACK, SCREEN_WIDTH
 from src.ui.button import Button
 
 class MenuStart:
     def __init__(self, screen):
+        # Inicjalizuje menu startowe z ekranem, czcionką oraz przyciskami "Play" i "Exit"
         self.screen = screen
         self.font = pygame.font.SysFont(None, 72)
         self.buttons = [
@@ -13,6 +13,7 @@ class MenuStart:
         ]
 
     def run(self):
+        # Uruchamia pętlę menu startowego, obsługując zdarzenia i zwracając wynik wybranej opcji
         clock = pygame.time.Clock()
         while True:
             for event in pygame.event.get():
@@ -36,6 +37,7 @@ class MenuStart:
 
 class MenuEnd:
     def __init__(self, screen, score):
+        # Inicjalizuje menu końcowe z ekranem, wynikiem oraz przyciskami "Restart" i "Exit"
         self.screen = screen
         self.score = score
         self.font = pygame.font.SysFont(None, 48)
@@ -45,6 +47,7 @@ class MenuEnd:
         ]
 
     def run(self):
+        # Uruchamia pętlę menu końcowego, obsługując zdarzenia i zwracając wybraną opcję
         clock = pygame.time.Clock()
         while True:
             for event in pygame.event.get():

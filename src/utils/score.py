@@ -1,23 +1,24 @@
 class ScoreManager:
     def __init__(self):
+        # Inicjalizuje menadżera wyniku z wartością początkową 0
         self.score = 0
 
     def add_score(self, points):
-        """Dodaje punkty do wyniku"""
+        # Dodaje określoną liczbę punktów do bieżącego wyniku
         self.score += points
 
     def get_current_score(self):
-        """Zwraca aktualny wynik"""
+        # Zwraca aktualny wynik
         return self.score
 
     def get_score(self):
-        """Alias dla get_current_score()"""
+        # Zwraca aktualny wynik (alias get_current_score)
         return self.score
 
     def save_score(self, score):
-        """Zapisuje wynik (dla kompatybilności)"""
+        # Zapisuje najwyższy wynik spośród obecnego i podanego
         self.score = max(self.score, score)
 
     def reset_score(self):
-        """Resetuje wynik do zera"""
+        # Resetuje wynik do zera
         self.score = 0

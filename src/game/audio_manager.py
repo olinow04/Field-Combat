@@ -3,16 +3,17 @@ import os
 
 
 class AudioManager:
+    # Inicjalizuje mikser pygame i ustawia głośności
     def __init__(self):
         pygame.mixer.init()
         self.sounds = {}
-        self.music_volume = 0.7
+        self.music_volume = 0.5
         self.sfx_volume = 0.5
         self.background_music = None
         self.is_background_playing = False
 
+    # Ładuje dźwięk z pliku i ustawia głośność efektów
     def load_sound(self, name, filepath):
-        """Ładuje dźwięk do pamięci"""
         try:
             if os.path.exists(filepath):
                 sound = pygame.mixer.Sound(filepath)
@@ -24,24 +25,24 @@ class AudioManager:
         except pygame.error as e:
             print(f"✗ Błąd ładowania dźwięku {name}: {e}")
 
+    # Odtwarza dźwięk efektu o podanej nazwie
     def play_sound(self, name):
-        """Odtwarza dźwięk jednorazowo"""
         if name in self.sounds:
             self.sounds[name].play()
 
+    # Odtwarza muzykę w tle w pętli, jeśli nie jest już odtwarzana
     def play_background_music(self, name):
-        """Odtwarza muzykę w tle w pętli"""
         if name in self.sounds and not self.is_background_playing:
-            self.sounds[name].play(-1)  # -1 = nieskończona pętla
+            self.sounds[name].play(-1)
             self.is_background_playing = True
 
+    # Zatrzymuje wszystkie dźwięki i muzykę w tle
     def stop_background_music(self):
-        """Zatrzymuje muzykę w tle"""
         pygame.mixer.stop()
         self.is_background_playing = False
 
+    # Ładuje wszystkie pliki dźwiękowe gry z podanego katalogu
     def load_all_game_sounds(self, sounds_dir):
-        """Ładuje wszystkie dźwięki gry"""
         sound_files = {
             'background_audio': 'background_audio.wav',
             'end_game_audio': 'end_game_audio.wav',
@@ -57,10 +58,9 @@ class AudioManager:
             self.load_sound(name, filepath)
 
 
-# Singleton pattern
 _audio_manager = None
 
-
+# Zwraca instancję AudioManager (singleton)
 def get_audio_manager():
     global _audio_manager
     if _audio_manager is None:
