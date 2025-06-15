@@ -7,218 +7,159 @@ from .player import Player
 from .enemy import Shooter, Chaser, Captor, Helicopter
 from .crosshair import Crosshair
 from .allied_unit import AlliedUnit
-from src.game.explosion import Explosion
+from .explosion import Explosion
 from .audio_manager import get_audio_manager
 
 
+class ImageLoader:
+    """Klasa pomocnicza do ładowania obrazów"""
+
+    def __init__(self):
+        self.image_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'image')
+
+    def load(self, filename, size=None):
+        try:
+            img = pygame.image.load(os.path.join(self.image_dir, filename)).convert_alpha()
+            return pygame.transform.scale(img, size) if size else img
+        except pygame.error:
+            # Fallback - tworzy kolorowy placeholder
+            surf = pygame.Surface(size or (60, 60), pygame.SRCALPHA)
+            pygame.draw.rect(surf, (0, 255, 0), surf.get_rect())
+            return surf
+
+
 class Level:
-    def __init__(self, screen, number, score_manager, bg_color=None):
+    """Główna klasa poziomu gry"""
+
+    def __init__(self, screen, number, score_manager):
+        # Podstawowa konfiguracja
         self.screen = screen
         self.number = number
         self.score_manager = score_manager
-        self.bg_color = bg_color or (50, 50, 50)
-
-        # Inicjalizacja audio managera
-        self.audio = get_audio_manager()
-
-        # Ładowanie dźwięków
-        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-        sounds_dir = os.path.join(project_root, 'sounds')
-        self.audio.load_all_game_sounds(sounds_dir)
-
-        # Rozpocznij muzykę w tle
-        self.audio.play_background_music('background_audio')
-
-        # Flagi dla dźwięków
-        self.levelup_played = False
-        self.player_death_started = False
-        self.game_over_timer = 0
-
-        # Wczytywanie obrazków
-        image_dir = os.path.join(project_root, 'image')
-
-        # Gracz (genesis.png)
-        try:
-            self.genesis_img = pygame.image.load(os.path.join(image_dir, 'genesis.png')).convert_alpha()
-            self.genesis_img = pygame.transform.scale(self.genesis_img, (60, 60))
-        except pygame.error:
-            self.genesis_img = pygame.Surface((60, 60), pygame.SRCALPHA)
-            pygame.draw.rect(self.genesis_img, (0, 255, 0), (0, 0, 60, 60))
-
-        # Pociski - GRACZ I SOJUSZNICY UŻYWAJĄ ally_bullet.png
-        try:
-            # Pocisk sojuszników i gracza (ally_bullet.png)
-            self.ally_bullet_img = pygame.image.load(os.path.join(image_dir, 'ally_bullet.png')).convert_alpha()
-            self.ally_bullet_img = pygame.transform.scale(self.ally_bullet_img, (15, 15))
-
-            # Pocisk gracza - taki sam jak sojuszników
-            self.bullet_img = self.ally_bullet_img
-
-            # Pocisk wrogów (bullet.png)
-            self.enemy_bullet_img = pygame.image.load(os.path.join(image_dir, 'bullet.png')).convert_alpha()
-            self.enemy_bullet_img = pygame.transform.scale(self.enemy_bullet_img, (15, 15))
-        except pygame.error:
-            self.ally_bullet_img = pygame.Surface((15, 15), pygame.SRCALPHA)
-            pygame.draw.circle(self.ally_bullet_img, (0, 255, 0), (7, 7), 7)
-            self.bullet_img = self.ally_bullet_img
-            self.enemy_bullet_img = pygame.Surface((15, 15), pygame.SRCALPHA)
-            pygame.draw.circle(self.enemy_bullet_img, (255, 0, 0), (7, 7), 7)
-
-        # WROGOWIE - używaj enemy_ grafik
-        try:
-            self.shooter_img = pygame.image.load(os.path.join(image_dir, 'shooter.png')).convert_alpha()
-            self.shooter_img = pygame.transform.scale(self.shooter_img, (60, 60))
-        except pygame.error:
-            self.shooter_img = pygame.Surface((60, 60), pygame.SRCALPHA)
-            pygame.draw.rect(self.shooter_img, (0, 255, 255), (0, 0, 60, 60))
-
-        try:
-            self.enemy_soldier_img = pygame.image.load(os.path.join(image_dir, 'enemy_soldier.png')).convert_alpha()
-            self.enemy_soldier_img = pygame.transform.scale(self.enemy_soldier_img, (60, 60))
-        except pygame.error:
-            self.enemy_soldier_img = pygame.Surface((60, 60), pygame.SRCALPHA)
-            pygame.draw.rect(self.enemy_soldier_img, (255, 0, 0), (0, 0, 60, 60))
-
-        try:
-            self.enemy_tank_img = pygame.image.load(os.path.join(image_dir, 'enemy_tank.png')).convert_alpha()
-            self.enemy_tank_img = pygame.transform.scale(self.enemy_tank_img, (60, 60))
-        except pygame.error:
-            self.enemy_tank_img = pygame.Surface((60, 60), pygame.SRCALPHA)
-            pygame.draw.rect(self.enemy_tank_img, (100, 100, 100), (0, 0, 60, 60))
-
-        try:
-            self.enemy_helicopter_img = pygame.image.load(
-                os.path.join(image_dir, 'enemy_helicopter.png')).convert_alpha()
-            self.enemy_helicopter_img = pygame.transform.scale(self.enemy_helicopter_img, (60, 60))
-        except pygame.error:
-            self.enemy_helicopter_img = pygame.Surface((60, 60), pygame.SRCALPHA)
-            pygame.draw.rect(self.enemy_helicopter_img, (0, 255, 0), (0, 0, 60, 60))
-
-        try:
-            self.captor_img = pygame.image.load(os.path.join(image_dir, 'captor.png')).convert_alpha()
-            self.captor_img = pygame.transform.scale(self.captor_img, (60, 60))
-        except pygame.error:
-            self.captor_img = pygame.Surface((60, 60), pygame.SRCALPHA)
-            pygame.draw.circle(self.captor_img, (255, 0, 255), (30, 30), 30)
-
-        # SOJUSZNICY - używaj ally_ grafik
-        try:
-            self.ally_soldier_img = pygame.image.load(os.path.join(image_dir, 'ally_soldier.png')).convert_alpha()
-            self.ally_soldier_img = pygame.transform.scale(self.ally_soldier_img, (60, 60))
-        except pygame.error:
-            self.ally_soldier_img = pygame.Surface((60, 60), pygame.SRCALPHA)
-            pygame.draw.rect(self.ally_soldier_img, (0, 255, 0), (0, 0, 60, 60))
-
-        try:
-            self.ally_tank_img = pygame.image.load(os.path.join(image_dir, 'ally_tank.png')).convert_alpha()
-            self.ally_tank_img = pygame.transform.scale(self.ally_tank_img, (60, 60))
-        except pygame.error:
-            self.ally_tank_img = pygame.Surface((60, 60), pygame.SRCALPHA)
-            pygame.draw.rect(self.ally_tank_img, (0, 100, 0), (0, 0, 60, 60))
-
-        try:
-            self.ally_helicopter_img = pygame.image.load(os.path.join(image_dir, 'ally_helicopter.png')).convert_alpha()
-            self.ally_helicopter_img = pygame.transform.scale(self.ally_helicopter_img, (60, 60))
-        except pygame.error:
-            self.ally_helicopter_img = pygame.Surface((60, 60), pygame.SRCALPHA)
-            pygame.draw.rect(self.ally_helicopter_img, (0, 150, 0), (0, 0, 60, 60))
-
-        # Pozostałe grafiki
-        try:
-            self.portal_img = pygame.image.load(os.path.join(image_dir, 'portal.png')).convert_alpha()
-            self.portal_img = pygame.transform.scale(self.portal_img, (80, 80))
-        except pygame.error:
-            self.portal_img = pygame.Surface((80, 80), pygame.SRCALPHA)
-            pygame.draw.circle(self.portal_img, (255, 0, 255), (40, 40), 40)
-
-        # HUD images
-        try:
-            self.score_img = pygame.image.load(os.path.join(image_dir, 'score.png')).convert_alpha()
-            self.score_img = pygame.transform.scale(self.score_img, (28, 28))
-        except pygame.error:
-            self.score_img = pygame.Surface((28, 28), pygame.SRCALPHA)
-            pygame.draw.rect(self.score_img, (255, 255, 0), (0, 0, 28, 28))
-
-        try:
-            self.allies_img = pygame.image.load(os.path.join(image_dir, 'allies.png')).convert_alpha()
-            self.allies_img = pygame.transform.scale(self.allies_img, (28, 28))
-        except pygame.error:
-            self.allies_img = pygame.Surface((28, 28), pygame.SRCALPHA)
-            pygame.draw.rect(self.allies_img, (0, 255, 0), (0, 0, 28, 28))
-
-        try:
-            self.heart_img = pygame.image.load(os.path.join(image_dir, 'heart.png')).convert_alpha()
-            self.heart_img = pygame.transform.scale(self.heart_img, (28, 28))
-        except pygame.error:
-            self.heart_img = pygame.Surface((28, 28), pygame.SRCALPHA)
-            pygame.draw.circle(self.heart_img, (255, 0, 0), (14, 14), 14)
-
-        # Eksplozje
-        try:
-            self.explosion_img = pygame.image.load(os.path.join(image_dir, 'explosion.png')).convert_alpha()
-            self.explosion_img = pygame.transform.scale(self.explosion_img, (32, 32))
-            Explosion.images = [self.explosion_img, pygame.transform.flip(self.explosion_img, 1, 1)]
-        except pygame.error:
-            self.explosion_img = pygame.Surface((32, 32), pygame.SRCALPHA)
-            pygame.draw.circle(self.explosion_img, (255, 100, 0), (16, 16), 16)
-            Explosion.images = [self.explosion_img]
-
-        # TŁA - POPRAWIONE NAZWY PLIKÓW
-        field_files = {
-            1: 'field_1.png',
-            2: 'field_2.png',
-            3: 'field_3.png'
-        }
-
-        # DODAJ DEBUGGING:
-        print(f"Loading level {self.number}")
-        bg_file = field_files.get(self.number, 'field_1.png')
-        print(f"Using background: {bg_file}")
-
-        try:
-            self.bg_img = pygame.image.load(os.path.join(image_dir, bg_file)).convert()
-            self.bg_img = pygame.transform.scale(self.bg_img, (SCREEN_WIDTH, SCREEN_HEIGHT))
-            print(f"Successfully loaded {bg_file}")
-        except pygame.error as e:
-            print(f"Failed to load {bg_file}: {e}")
-            self.bg_img = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-            self.bg_img.fill((50, 100, 50))
-
-        # Inicjalizacja grup sprite'ów
-        self.bullets = pygame.sprite.Group()
-        self.enemy_bullets = pygame.sprite.Group()
-        self.ally_bullets = pygame.sprite.Group()
-        self.enemies = pygame.sprite.Group()
-        self.allies = pygame.sprite.Group()
-        self.explosions = pygame.sprite.Group()
-
-        # Tworzenie gracza
-        self.player = Player((SCREEN_WIDTH // 2, SCREEN_HEIGHT - 100), self.genesis_img, self.bullet_img)
-        self.player.hp = 10
-
-        # Crosshair
-        self.crosshair = Crosshair((SCREEN_WIDTH // 2, SCREEN_HEIGHT - 250))
-        self.crosshair.player = self.player
-        self.player.crosshair = self.crosshair
-
-        # Portal
-        self.portal_active = False
-        self.portal_timer = 0
-        self.portal_rect = self.portal_img.get_rect(midtop=(SCREEN_WIDTH // 2, 50))
-
-        # Spawn wrogów
-        self._spawn_enemies()
-
-        # Zmienne kontrolne
-        self._space_pressed = False
-        self._c_pressed = False
+        self.score = 0
         self.frame_count = 0
 
-        # Captor spawning
+        # Stan gry
+        self.portal_active = False
+        self.portal_timer = 0
+        self.levelup_played = False
+        self._space_pressed = False
+        self._c_pressed = False
         self.captor_spawned = False
         self.captor_spawn_at = random.randint(60, 300)
 
-        self.score = 0
+        # Inicjalizacja audio
+        self.audio = get_audio_manager()
+        self._setup_audio()
+
+        # Ładowanie zasobów
+        self.images = self._load_game_resources()
+
+        self.bg_img = self.images['background']
+        self.bullet_img = self.images['bullet']
+        self.enemy_bullet_img = self.images['enemy_bullet']
+        self.portal_img = self.images['portal']
+        self.portal_rect = self.portal_img.get_rect(center=(SCREEN_WIDTH // 2, 60))
+
+        # HUD
+        self.score_img = self.images['score']
+        self.allies_img = self.images['allies']
+        self.heart_img = self.images['heart']
+
+        # Enemy sprites
+        self.shooter_img = self.images['shooter']
+        self.enemy_soldier_img = self.images['enemy_soldier']
+        self.enemy_tank_img = self.images['enemy_tank']
+        self.enemy_helicopter_img = self.images['enemy_helicopter']
+        self.captor_img = self.images['captor']
+
+        # Ally sprites
+        self.ally_soldier_img = self.images['ally_soldier']
+        self.ally_tank_img = self.images['ally_tank']
+        self.ally_helicopter_img = self.images['ally_helicopter']
+        self.ally_bullet_img = self.images['bullet']  # lub self.images['bullet'] jeśli to jest właściwy
+
+        # Inicjalizacja grup sprite'ów
+        self.groups = self._create_sprite_groups()
+        # Mapowanie grup na osobne atrybuty
+        self.bullets = self.groups['bullets']
+        self.enemy_bullets = self.groups['enemy_bullets']
+        self.ally_bullets = self.groups['ally_bullets']
+        self.enemies = self.groups['enemies']
+        self.allies = self.groups['allies']
+        self.explosions = self.groups['explosions']
+
+        # Tworzenie jednostek
+        self.player = self._create_player()
+        self.crosshair = self._create_crosshair()
+        self._spawn_enemies()
+
+    def _setup_audio(self):
+        """Konfiguracja systemu audio"""
+        sounds_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'sounds')
+        self.audio.load_all_game_sounds(sounds_dir)
+        self.audio.play_background_music('background_audio')
+
+    def _load_game_resources(self):
+        """Ładowanie wszystkich zasobów graficznych"""
+        loader = ImageLoader()
+        images = {
+            'player': loader.load('genesis.png', (60, 60)),
+            'bullet': loader.load('ally_bullet.png', (15, 15)),
+            'enemy_bullet': loader.load('bullet.png', (15, 15)),
+            'portal': loader.load('portal.png', (80, 80)),
+            'explosion': loader.load('explosion.png', (32, 32)),
+            # HUD
+            'score': loader.load('score.png', (28, 28)),
+            'allies': loader.load('allies.png', (28, 28)),
+            'heart': loader.load('heart.png', (28, 28)),
+            # Przeciwnicy
+            'shooter': loader.load('shooter.png', (60, 60)),
+            'enemy_soldier': loader.load('enemy_soldier.png', (60, 60)),
+            'enemy_tank': loader.load('enemy_tank.png', (60, 60)),
+            'enemy_helicopter': loader.load('enemy_helicopter.png', (60, 60)),
+            'captor': loader.load('captor.png', (60, 60)),
+            # Sojusznicy
+            'ally_soldier': loader.load('ally_soldier.png', (60, 60)),
+            'ally_tank': loader.load('ally_tank.png', (60, 60)),
+            'ally_helicopter': loader.load('ally_helicopter.png', (60, 60))
+        }
+
+        # Tło poziomu
+        bg_file = f'field_{self.number}.png'
+        images['background'] = loader.load(bg_file, (SCREEN_WIDTH, SCREEN_HEIGHT))
+
+        # Konfiguracja eksplozji
+        Explosion.images = [images['explosion'],
+                            pygame.transform.flip(images['explosion'], 1, 1)]
+
+        return images
+
+    def _create_sprite_groups(self):
+        """Tworzenie wszystkich grup sprite'ów"""
+        return {
+            'bullets': pygame.sprite.Group(),
+            'enemy_bullets': pygame.sprite.Group(),
+            'ally_bullets': pygame.sprite.Group(),
+            'enemies': pygame.sprite.Group(),
+            'allies': pygame.sprite.Group(),
+            'explosions': pygame.sprite.Group()
+        }
+
+    def _create_player(self):
+        """Tworzenie gracza"""
+        player = Player((SCREEN_WIDTH // 2, SCREEN_HEIGHT - 100),
+                        self.images['player'],
+                        self.images['bullet'])
+        player.hp = 10
+        return player
+
+    def _create_crosshair(self):
+        """Tworzenie celownika"""
+        crosshair = Crosshair((SCREEN_WIDTH // 2, SCREEN_HEIGHT - 250))
+        crosshair.player = self.player
+        self.player.crosshair = crosshair
+        return crosshair
 
     def _spawn_enemies(self):
         # Shooterzy
@@ -259,7 +200,7 @@ class Level:
                     sprite, etype = self.enemy_soldier_img, "infantry"
 
                 self.enemies.add(Chaser(
-                    (x, y),
+            (x, y),
                     sprite,
                     self.player,
                     self.enemy_bullets,
@@ -331,6 +272,14 @@ class Level:
         self.enemies.update()
         self.explosions.update()
 
+        #
+        for captor in [e for e in self.enemies if isinstance(e, Captor)]:
+            hit_allies = pygame.sprite.spritecollide(captor, self.allies, dokill=True)
+            if hit_allies:
+                self.audio.play_sound('capture_audio')  # jeśli masz taki plik
+                explosion = Explosion(captor.rect.center)
+                self.explosions.add(explosion)
+
         # 1) pociski gracza i sojuszników vs wrogowie
         for group, pts in [(self.bullets, 10), (self.ally_bullets, 5)]:
             for b in list(group):
@@ -386,12 +335,10 @@ class Level:
                     return "game_over"
 
         # 3) bezpośredni kontakt gracz–wróg
-        if pygame.sprite.spritecollide(self.player, self.enemies, False):
+        if any(pygame.sprite.collide_mask(self.player, e) for e in self.enemies):
             explosion = Explosion(self.player.rect.center)
             self.explosions.add(explosion)
-            # Zatrzymaj muzykę w tle
             self.audio.stop_background_music()
-            # Odtwórz dźwięk śmierci gracza
             self.audio.play_sound('player_die')
             pygame.time.wait(1000)
             self.audio.play_sound('game_over_audio')
@@ -422,7 +369,7 @@ class Level:
 
         return "continue"
 
-    def run(self):
+    def run(self,unit_count):
         clock = pygame.time.Clock()
 
         while True:
@@ -435,7 +382,7 @@ class Level:
             self.crosshair.update()
 
             # strzały gracza
-            if keys[pygame.K_SPACE] and not keys[pygame.K_b]:
+            if keys[pygame.K_SPACE]:
                 if not self._space_pressed:
                     b = PlayerBullet(
                         self.player.rect.center,
@@ -453,7 +400,7 @@ class Level:
                 self._space_pressed = False
 
             # POPRAWIONE PRZYWOŁYWANIE SOJUSZNIKÓW
-            if keys[pygame.K_c] and not self._c_pressed and len(self.allies) < 6:
+            if keys[pygame.K_c] and not self._c_pressed and len(self.allies) < unit_count:
                 unit_types = ["infantry", "tank", "helicopter"]
                 unit_type = random.choice(unit_types)
                 spawn = (self.player.rect.centerx, self.player.rect.top - 30)
@@ -477,7 +424,6 @@ class Level:
                     sprite=sprite
                 )
                 self.allies.add(ally)
-                self.score_manager.add_score(-20)
                 self._c_pressed = True
             elif not keys[pygame.K_c]:
                 self._c_pressed = False
