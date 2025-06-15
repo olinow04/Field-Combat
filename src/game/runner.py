@@ -136,6 +136,7 @@ def show_end_screen(screen, score, is_victory):
 
 
 def main():
+    unit_count = 3
     pygame.init()
     screen = pygame.display.set_mode((800, 600))
     pygame.display.set_caption("Field Combat")
@@ -151,10 +152,11 @@ def main():
 
     while True:
         level = Level(screen, level_number, score_manager)
-        result = level.run()
+        result = level.run(unit_count)
 
         if result == "next_level":
             level_number += 1
+            unit_count +=1
             # ZMIEŃ TĘ SEKCJĘ:
             if level_number > max_levels:  # Sprawdź czy to ostatni poziom
                 # Zatrzymaj wszystkie dźwięki przed końcowym ekranem

@@ -1,5 +1,3 @@
-from src.settings import NUM_LEVELS
-
 # Podstawowa konfiguracja gry
 
 # Ustawienia okna
