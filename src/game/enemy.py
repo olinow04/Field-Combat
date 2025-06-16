@@ -208,6 +208,7 @@ class Helicopter(Enemy):
 class Captor(Enemy):
     SPEED = 3
     MAX_HP = 5
+    ESCAPE_SPEED = 5
 
     def __init__(self, position, sprite, allies_group, bullet_group, bullet_sprite=None):
         # Tworzy wroga porywającego sojuszników i transportującego ich poza ekran.
@@ -239,7 +240,7 @@ class Captor(Enemy):
                 self.carried = ally
                 self.allies_group.remove(ally)
         else:
-            self.velocity = pygame.math.Vector2(0, -self.SPEED)
+            self.velocity = pygame.math.Vector2(0, -self.ESCAPE_SPEED)
             super().update()
             self.carried.rect.center = self.rect.center
             if not screen_rect.colliderect(self.rect):

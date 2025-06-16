@@ -120,7 +120,7 @@ def show_end_screen(screen, score, is_victory):
 
 def main():
     # Główna funkcja uruchamiająca grę – inicjalizacja, pętla poziomów, wynik końcowy.
-    unit_count = 3
+    unit_count = 6
     pygame.init()
     screen = pygame.display.set_mode((800, 600))
     pygame.display.set_caption("Field Combat")

@@ -72,7 +72,7 @@ class Level:
         self.ally_soldier_img = self.images['ally_soldier']
         self.ally_tank_img = self.images['ally_tank']
         self.ally_helicopter_img = self.images['ally_helicopter']
-        self.ally_bullet_img = self.images['bullet']  # lub self.images['bullet'] jeśli to jest właściwy
+        self.ally_bullet_img = self.images['bullet']
 
         self.groups = self._create_sprite_groups()
 
@@ -171,7 +171,7 @@ class Level:
             x = 50 + (i * 70) % (SCREEN_WIDTH - 100)
             y = 150 + (i // 10) * 60
 
-            if i % 5 == 4 and helicopter_positions:
+            if i % 3 == 0 and helicopter_positions:
                 self.enemies.add(Helicopter(
                     helicopter_positions.pop(),
                     self.enemy_helicopter_img,
@@ -259,7 +259,7 @@ class Level:
         for captor in [e for e in self.enemies if isinstance(e, Captor)]:
             hit_allies = pygame.sprite.spritecollide(captor, self.allies, dokill=True)
             if hit_allies:
-                self.audio.play_sound('capture_audio')  # jeśli masz taki plik
+                self.audio.play_sound('capture_audio')
                 explosion = Explosion(captor.rect.center)
                 self.explosions.add(explosion)
 
@@ -326,7 +326,7 @@ class Level:
                 self.audio.play_sound('levelup_audio')
                 self.levelup_played = True
 
-            if not any(isinstance(e, Shooter) for e in self.enemies):
+            if len(self.enemies) == 0:
                 self.portal_active = True
 
         if self.portal_active and self.player.rect.colliderect(self.portal_rect):
