@@ -16,7 +16,7 @@ class Button:
         surface.blit(txt, txt_rect)
 
     def handle_event(self, event):
-        # Obsługuje zdarzenie kliknięcia myszką, wywołując callback jeśli kliknięto przycisk
+        # Obsługuje zdarzenie kliknięcia myszką
         if event.type == pygame.MOUSEBUTTONDOWN and self.rect.collidepoint(event.pos):
             return self.callback()
         return None

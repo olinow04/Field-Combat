@@ -4,25 +4,26 @@ from .unit import Unit
 from .bullet import Bullet
 
 class Enemy(Unit):
-    # Inicjalizuje podstawowego przeciwnika z prędkością i kolizją
+    SPEED = 2
+
     def __init__(self, position, sprite, bullet_sprite=None):
+        # Inicjalizuje wroga z daną pozycją, sprite'em i opcjonalnym sprite'em pocisku.
         super().__init__(position, sprite)
         self.velocity = pygame.math.Vector2(0, 0)
         self.bullet_sprite = bullet_sprite
-        self.rect = self.image.get_rect(center=position).inflate(-30, -30)
-
+        self.rect = self.image.get_rect(center=position)
 
 class Shooter(Enemy):
-    # Inicjalizuje przeciwnika strzelającego w gracza co pewien czas
     def __init__(self, position, sprite, target, bullet_group, bullet_sprite=None):
+        # Tworzy wroga strzelającego, ustawiając cel, grupę pocisków i parametry ataku.
         super().__init__(position, sprite, bullet_sprite)
         self.target = target
         self.bullet_group = bullet_group
         self.timer = 0
         self.interval = 180
 
-    # Aktualizuje licznik czasu i strzela w gracza, gdy minie interwał
     def update(self):
+        # Aktualizuje timer i co określony interwał wystrzeliwuje pocisk w kierunku celu.
         self.timer += 1
         if self.timer % self.interval == 0:
             delta = pygame.math.Vector2(self.target.rect.center) - pygame.math.Vector2(self.rect.center)
@@ -36,19 +37,17 @@ class Shooter(Enemy):
                 self.bullet_group.add(bullet)
         super().update()
 
-    # Zwraca grafikę pocisku lub domyślną
     def make_bullet_sprite(self):
+        # Zwraca sprite pocisku, jeśli został zdefiniowany.
         if self.bullet_sprite: return self.bullet_sprite
 
-
 class Chaser(Enemy):
-    # Inicjalizuje przeciwnika goniącego gracza, z unikami i ewentualnym strzelaniem
     def __init__(self, position, sprite, target, bullet_group, enemy_type="infantry", bullet_sprite=None):
+        # Tworzy wroga podążającego za graczem, dostosowując statystyki w zależności od typu jednostki.
         super().__init__(position, sprite, bullet_sprite)
         self.enemy_type = enemy_type
         self.target = target
         self.bullet_group = bullet_group
-
         if self.enemy_type == "tank":
             self.hp = 2
             self.speed = 1.3
@@ -58,7 +57,6 @@ class Chaser(Enemy):
         else:
             self.hp = 1
             self.speed = random.uniform(1.8, 2.5)
-
         self.pause_time = random.randint(40, 90)
         self.move_time = random.randint(60, 140)
         self.timer = 0
@@ -67,8 +65,8 @@ class Chaser(Enemy):
         self.horizontal_change_timer = random.randint(60, 180)
         self.horizontal_timer = 0
 
-    # Steruje ruchem i zachowaniem przeciwnika, w tym unikami i atakiem
     def update(self):
+        # Steruje ruchem wroga, jego unikiem przed pociskami i atakami (jeśli to czołg).
         dodge_vector = pygame.math.Vector2(0, 0)
         if self.enemy_type == "infantry":
             min_dist = 80
@@ -109,8 +107,8 @@ class Chaser(Enemy):
                 self.pause_time = random.randint(40, 90)
         super().update()
 
-    # Strzela pociskiem w stronę gracza (dla czołgu)
     def _shoot(self):
+        # Tworzy i wystrzeliwuje pocisk w kierunku celu (używane przez czołgi).
         if self.enemy_type == "tank":
             direction = pygame.math.Vector2(self.target.rect.center) - pygame.math.Vector2(self.rect.center)
             if direction.length() > 0:
@@ -122,18 +120,22 @@ class Chaser(Enemy):
                 )
                 self.bullet_group.add(bullet)
 
-    # Tworzy grafikę pocisku zależnie od typu przeciwnika
     def _create_bullet_sprite(self):
+        # Tworzy domyślny sprite pocisku wroga w zależności od typu.
         if self.bullet_sprite: return self.bullet_sprite
         color = (255, 0, 0) if self.enemy_type == "tank" else (0, 255, 0)
         surf = pygame.Surface((6, 6), pygame.SRCALPHA)
         pygame.draw.circle(surf, color, (3, 3), 3)
         return surf
 
-
 class Helicopter(Enemy):
-    # Inicjalizuje helikopter atakujący gracza w sekwencjach
+    SPEED = 3
+    CLOSE_DIST = 180
+    MAX_SHOTS = 3
+    ESCAPE_SPEED = 5
+
     def __init__(self, position, sprite, target, bullet_group, bullet_sprite=None):
+        # Inicjalizuje helikopter z trybem działania, celem i parametrami strzelania.
         super().__init__(position, sprite, bullet_sprite)
         self.target = target
         self.bullet_group = bullet_group
@@ -141,8 +143,8 @@ class Helicopter(Enemy):
         self.state = "APPROACH"
         self.attack_time = 0
 
-    # Steruje stanami helikoptera: podejście, atak, ucieczka
     def update(self):
+        # Zarządza zachowaniem helikoptera: podejście, atak lub ucieczka.
         screen_rect = pygame.display.get_surface().get_rect()
         if not screen_rect.colliderect(self.rect): self.kill(); return
         if self.state == "APPROACH": self._approach_player()
@@ -150,8 +152,8 @@ class Helicopter(Enemy):
         elif self.state == "ESCAPE": self._escape_pattern()
         super().update()
 
-    # Podlatuje do gracza aż znajdzie się wystarczająco blisko
     def _approach_player(self):
+        # Przemieszcza helikopter w stronę gracza, przełącza się w tryb ataku, gdy jest blisko.
         delta = pygame.math.Vector2(self.target.rect.center) - pygame.math.Vector2(self.rect.center)
         dist = delta.length()
         if dist > 0:
@@ -162,8 +164,8 @@ class Helicopter(Enemy):
             self.attack_time = 0
             self.shot_counter = 0
 
-    # Atakuje gracza kilkoma strzałami, po czym ucieka
     def _attack_player(self):
+        # Atakuje gracza serią strzałów, a potem przechodzi do ucieczki.
         self.velocity = pygame.math.Vector2(0, 0)
         self.attack_time += 1
         if self.attack_time % 30 == 0:
@@ -176,12 +178,12 @@ class Helicopter(Enemy):
                 -self.ESCAPE_SPEED
             )
 
-    # Przemieszcza helikopter do góry podczas ucieczki
     def _escape_pattern(self):
+        # Stopniowo zwiększa prędkość w pionie, aby opuścić ekran.
         self.velocity.y -= 0.2
 
-    # Strzela w przewidywaną pozycję gracza
     def _shoot_at_player(self):
+        # Przewiduje ruch gracza i wystrzeliwuje pocisk w jego przewidywaną pozycję.
         target_pos = pygame.math.Vector2(self.target.rect.center)
         current_pos = pygame.math.Vector2(self.rect.center)
         distance = target_pos - current_pos
@@ -196,17 +198,19 @@ class Helicopter(Enemy):
         )
         self.bullet_group.add(bullet)
 
-    # Tworzy grafikę pocisku helikoptera
     def _create_bullet_sprite(self):
+        # Tworzy domyślny sprite pocisku helikoptera, jeśli brak własnego.
         if self.bullet_sprite: return self.bullet_sprite
         surf = pygame.Surface((8, 8), pygame.SRCALPHA)
         pygame.draw.circle(surf, (255, 50, 50), (4, 4), 4)
         return surf
 
-
 class Captor(Enemy):
-    # Inicjalizuje przeciwnika porywającego sojuszników
+    SPEED = 3
+    MAX_HP = 5
+
     def __init__(self, position, sprite, allies_group, bullet_group, bullet_sprite=None):
+        # Tworzy wroga porywającego sojuszników i transportującego ich poza ekran.
         super().__init__(position, sprite, bullet_sprite)
         self.allies_group = allies_group
         self.bullet_group = bullet_group
@@ -214,8 +218,8 @@ class Captor(Enemy):
         self.carried = None
         self.hp = self.MAX_HP
 
-    # Porywa najbliższego sojusznika i odlatuje z nim
     def update(self):
+        # Steruje logiką porywania najbliższego sojusznika i jego wynoszenia z pola gry.
         self.timer += 1
         screen_rect = pygame.display.get_surface().get_rect()
         if not self.allies_group or len(self.allies_group) == 0:
@@ -243,15 +247,15 @@ class Captor(Enemy):
                 self.kill()
         if self.carried is None and not screen_rect.colliderect(self.rect): self.kill()
 
-    # Zwraca grafikę pocisku porwacza
     def make_bullet_sprite(self):
+        # Zwraca domyślny sprite pocisku dla wroga, jeśli nie ustawiono innego.
         if self.bullet_sprite: return self.bullet_sprite
         surf = pygame.Surface((6, 6), pygame.SRCALPHA)
         pygame.draw.circle(surf, (255, 0, 255), (3, 3), 3)
         return surf
 
-    # Odbiera obrażenia i niszczy się po utracie wszystkich punktów życia
     def take_damage(self, dmg=1):
+        # Odejmuje punkty życia od wroga; usuwa niesionego sojusznika przy śmierci.
         self.hp -= dmg
         if self.hp <= 0:
             if self.carried is not None: self.carried.kill()

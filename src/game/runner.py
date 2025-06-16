@@ -7,7 +7,6 @@ from .audio_manager import get_audio_manager
 
 def show_start_screen(screen):
     # Wyświetla ekran startowy gry z grafiką lub tekstem i obsługuje wejście gracza (ENTER lub ESC).
-    audio = get_audio_manager()
 
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 

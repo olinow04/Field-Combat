@@ -4,9 +4,10 @@ import os
 
 class Crosshair(pygame.sprite.Sprite):
     def __init__(self, position):
+        # Inicjalizuje celownik z określoną pozycją i wczytuje jego grafikę.
         super().__init__()
 
-        # Wczytaj grafikę crosshair.png zamiast żółtego kwadratu
+        # Wczytuje grafikę crosshair.png
         project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
         image_dir = os.path.join(project_root, 'image')
 
@@ -20,10 +21,10 @@ class Crosshair(pygame.sprite.Sprite):
         self.player = None
 
     def update(self):
-        """Aktualizacja pozycji celownika względem gracza"""
+        # Aktualizuje pozycję celownika względem gracza, jeśli jest przypisany.
         if hasattr(self, 'player') and self.player is not None:
             self.rect.center = self.player.rect.center + pygame.math.Vector2(0, -150)
 
     def draw(self, screen):
-        """Rysuje celownik na podanej powierzchni"""
+        # Rysuje celownik na ekranie w aktualnej pozycji.
         screen.blit(self.image, self.rect)
