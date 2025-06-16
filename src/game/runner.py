@@ -1,7 +1,7 @@
 import pygame
 import os
 from .level import Level
-from src.utils.score import ScoreManager
+from .score import ScoreManager
 from .audio_manager import get_audio_manager
 
 
