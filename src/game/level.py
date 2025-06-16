@@ -19,7 +19,7 @@ class ImageLoader:
         self.image_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'image')
 
     def load(self, filename, size=None):
-        # Ładuje obraz z pliku i skaluje go, jeśli podano rozmiar
+        # Ładuje obraz z pliku i skaluje go
         try:
             img = pygame.image.load(os.path.join(self.image_dir, filename)).convert_alpha()
             return pygame.transform.scale(img, size) if size else img

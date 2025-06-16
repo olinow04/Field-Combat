@@ -108,7 +108,7 @@ class Chaser(Enemy):
         super().update()
 
     def _shoot(self):
-        # Tworzy i wystrzeliwuje pocisk w kierunku celu (używane przez czołgi).
+        # Tworzy i wystrzeliwuje pocisk w kierunku celu.
         if self.enemy_type == "tank":
             direction = pygame.math.Vector2(self.target.rect.center) - pygame.math.Vector2(self.rect.center)
             if direction.length() > 0:
