@@ -1,7 +1,6 @@
 import pygame
 import random
 import os
-from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
 from .bullet import PlayerBullet
 from .player import Player
 from .enemy import Shooter, Chaser, Captor, Helicopter
@@ -9,7 +8,8 @@ from .crosshair import Crosshair
 from .allied_unit import AlliedUnit
 from .explosion import Explosion
 from .audio_manager import get_audio_manager
-
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
 
 class ImageLoader:
     """Klasa pomocnicza do ładowania obrazów"""
@@ -305,6 +305,7 @@ class Level:
                 eb.kill()
                 self.player.hp -= 1
                 if self.player.hp <= 0:
+                    self.score_manager.add_score(self.score)
                     self.audio.stop_background_music()
                     self.audio.play_sound('player_die')
                     pygame.time.wait(1000)
@@ -313,6 +314,7 @@ class Level:
 
         # 3) bezpośredni kontakt gracz–wróg
         if any(pygame.sprite.collide_mask(self.player, e) for e in self.enemies):
+            self.score_manager.add_score(self.score)
             self.audio.stop_background_music()
             self.audio.play_sound('player_die')
             pygame.time.wait(1000)
