@@ -203,7 +203,8 @@ class Level:
 
         score_x = 10
         self.screen.blit(self.score_img, (score_x, hud_y))
-        score_text = font.render(f"{self.score}", True, (255, 255, 255))
+        total_score = self.score_manager.get_current_score() + self.score
+        score_text = font.render(f"{total_score}", True, (255, 255, 255))
         self.screen.blit(score_text, (score_x + text_offset, hud_y + 2))
 
         allies_x = 150
