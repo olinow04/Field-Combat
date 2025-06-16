@@ -2,6 +2,7 @@ import pygame
 
 
 class Explosion(pygame.sprite.Sprite):
+    """Klasa tworząca i aktualizująca animację eksplozji w grzes"""
     images = []
 
     def __init__(self, pos):

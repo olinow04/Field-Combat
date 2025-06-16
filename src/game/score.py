@@ -1,4 +1,5 @@
 class ScoreManager:
+    """Klasa zapewniająca za prawidłowe zwrócenie wyniku gracza"""
     def __init__(self):
         # Inicjalizuje menadżera wyniku z wartością początkową 0
         self.score = 0

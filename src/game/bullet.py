@@ -4,6 +4,7 @@ from src.game.explosion import Explosion
 
 
 class Bullet(Unit):
+    """Klasa inicjalizująca parametry wszystkich pocisków w grze i obsługująca ich podstawowe zachowanie"""
     def __init__(self, position, sprite, velocity):
         # Inicjalizuje pocisk z pozycją, grafiką i wektorem prędkości
         super().__init__(position, sprite)
@@ -18,6 +19,7 @@ class Bullet(Unit):
 
 
 class PlayerBullet(Bullet):
+    """Klasa inicjalizująca parametry pocisków gracza i obsługująca ich specyficzne zachowanie"""
     def __init__(self, position, sprite, velocity, crosshair, explosions_group):
         # Inicjalizuje pocisk gracza, cel (celownik) oraz grupę eksplozji
         super().__init__(position, sprite, velocity)

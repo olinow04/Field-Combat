@@ -3,6 +3,7 @@ import os
 
 
 class AudioManager:
+    """Klasa odpowiedzialna za obsługę efektów dźwiękowych w grze"""
     # Inicjalizuje mikser pygame i ustawia głośności
     def __init__(self):
         pygame.mixer.init()

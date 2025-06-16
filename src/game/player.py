@@ -4,6 +4,7 @@ from src.game.bullet import PlayerBullet
 
 
 class Player(Unit):
+    """Klasa tworząca gracza i obsługująca jego zachowanie"""
     SPEED = 3
 
     def __init__(self, position, sprite, bullet_sprite):

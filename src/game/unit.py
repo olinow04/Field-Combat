@@ -1,6 +1,7 @@
 import pygame
 
 class Unit(pygame.sprite.Sprite):
+    """Klasa podstawowa dla wsyzstkich jednostek w grze"""
     def __init__(self, position, sprite):
         # Inicjalizuje jednostkę z pozycją, obrazem i wektorem prędkości.
         super().__init__()

@@ -4,6 +4,7 @@ from .unit import Unit
 from .bullet import Bullet
 
 class Enemy(Unit):
+    """ Klasa zapewniająca wspólne atrybuty i zachowania dla wszystkich wrogów """
     # Inicjalizuje podstawowego przeciwnika z prędkością i kolizją
     def __init__(self, position, sprite, bullet_sprite=None):
         super().__init__(position, sprite)
@@ -13,6 +14,7 @@ class Enemy(Unit):
 
 
 class Shooter(Enemy):
+    """ Klasa tworząca żołnierza oraz obsługująca jego zachowanie """
     # Inicjalizuje przeciwnika strzelającego w gracza co pewien czas
     def __init__(self, position, sprite, target, bullet_group, bullet_sprite=None):
         super().__init__(position, sprite, bullet_sprite)
@@ -42,6 +44,7 @@ class Shooter(Enemy):
 
 
 class Chaser(Enemy):
+     """ Klasa tworząca czołg oraz obsługująca jego zachowanie """
     # Inicjalizuje przeciwnika goniącego gracza, z unikami i ewentualnym strzelaniem
     def __init__(self, position, sprite, target, bullet_group, enemy_type="infantry", bullet_sprite=None):
         super().__init__(position, sprite, bullet_sprite)
@@ -132,6 +135,7 @@ class Chaser(Enemy):
 
 
 class Helicopter(Enemy):
+    """ Klasa tworząca helikopter oraz obsługująca jego zachowanie """
     # Inicjalizuje helikopter atakujący gracza w sekwencjach
     def __init__(self, position, sprite, target, bullet_group, bullet_sprite=None):
         super().__init__(position, sprite, bullet_sprite)
@@ -205,6 +209,7 @@ class Helicopter(Enemy):
 
 
 class Captor(Enemy):
+    """ Klasa tworząca przechwytywacza oraz obsługująca jego zachowanie """
     # Inicjalizuje przeciwnika porywającego sojuszników
     def __init__(self, position, sprite, allies_group, bullet_group, bullet_sprite=None):
         super().__init__(position, sprite, bullet_sprite)

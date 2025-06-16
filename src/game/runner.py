@@ -1,9 +1,10 @@
 import pygame
 import os
 from .level import Level
-from src.utils.score import ScoreManager
+from src.game.score import ScoreManager
 from .audio_manager import get_audio_manager
-
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
 
 def show_start_screen(screen):
     # Wyświetla ekran startowy gry z grafiką lub tekstem i obsługuje wejście gracza (ENTER lub ESC).
@@ -19,7 +20,7 @@ def show_start_screen(screen):
     try:
         startup_screen_path = os.path.join(project_root, 'image', 'startup_screen.png')
         startup_screen_img = pygame.image.load(startup_screen_path).convert_alpha()
-        startup_screen_img = pygame.transform.scale(startup_screen_img, (800, 600))
+        startup_screen_img = pygame.transform.scale(startup_screen_img, (SCREEN_WIDTH, SCREEN_HEIGHT))
         startup_screen_rect = startup_screen_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2))
         screen.blit(startup_screen_img, startup_screen_rect)
     except pygame.error:
@@ -75,7 +76,7 @@ def show_end_screen(screen, score, is_victory):
         try:
             end_screen_path = os.path.join(project_root, 'image', 'end_screen.png')
             end_screen_img = pygame.image.load(end_screen_path).convert_alpha()
-            end_screen_img = pygame.transform.scale(end_screen_img, (800, 600))
+            end_screen_img = pygame.transform.scale(end_screen_img, (SCREEN_WIDTH, SCREEN_HEIGHT))
             end_screen_rect = end_screen_img.get_rect(centerx=screen.get_width() // 2, y=50)
             screen.blit(end_screen_img, end_screen_rect)
         except pygame.error:
@@ -87,7 +88,7 @@ def show_end_screen(screen, score, is_victory):
         try:
             game_over_path = os.path.join(project_root, 'image', 'game_over.png')
             game_over_img = pygame.image.load(game_over_path).convert_alpha()
-            game_over_img = pygame.transform.scale(game_over_img, (800, 600))
+            game_over_img = pygame.transform.scale(game_over_img, (SCREEN_WIDTH, SCREEN_HEIGHT))
             game_over_rect = game_over_img.get_rect(centerx=screen.get_width() // 2, y=50)
             screen.blit(game_over_img, game_over_rect)
         except pygame.error:
@@ -123,7 +124,7 @@ def main():
     # Główna funkcja uruchamiająca grę – inicjalizacja, pętla poziomów, wynik końcowy.
     unit_count = 3
     pygame.init()
-    screen = pygame.display.set_mode((800, 600))
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Field Combat")
 
     if not show_start_screen(screen):

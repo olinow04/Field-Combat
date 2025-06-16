@@ -3,6 +3,7 @@ import os
 
 
 class Crosshair(pygame.sprite.Sprite):
+    """Klasa do obsługi i tworzenia celownika"""
     def __init__(self, position):
         # Inicjalizuje celownik i ustawia jego pozycję oraz grafikę.
         super().__init__()

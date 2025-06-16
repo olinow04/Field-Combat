@@ -4,6 +4,7 @@ from src.game.unit import Unit
 from src.game.bullet import Bullet
 
 class AlliedUnit(Unit):
+    """ Klasa tworząca sojuszniczą jednostkę oraz obsługująca jego zachowanie """
     TYPE_STATS = {
         "infantry": {"shoot_interval": 100, "bullet_speed": 5, "speed": 2},
         "tank": {"shoot_interval": 90, "bullet_speed": 4, "speed": 1.3},

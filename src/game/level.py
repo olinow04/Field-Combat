@@ -1,7 +1,7 @@
 import pygame
 import random
 import os
-from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
+from .runner import SCREEN_WIDTH, SCREEN_HEIGHT
 from .bullet import PlayerBullet
 from .player import Player
 from .enemy import Shooter, Chaser, Captor, Helicopter
@@ -9,7 +9,6 @@ from .crosshair import Crosshair
 from .allied_unit import AlliedUnit
 from .explosion import Explosion
 from .audio_manager import get_audio_manager
-
 
 class ImageLoader:
     """Klasa pomocnicza do ładowania obrazów"""
@@ -19,7 +18,7 @@ class ImageLoader:
         self.image_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'image')
 
     def load(self, filename, size=None):
-        # Ładuje obraz z pliku i opcjonalnie zmienia jego rozmiar
+        # Ładuje obraz z pliku i skaluje go
         try:
             img = pygame.image.load(os.path.join(self.image_dir, filename)).convert_alpha()
             return pygame.transform.scale(img, size) if size else img
@@ -33,13 +32,12 @@ class Level:
     """Główna klasa poziomu gry"""
 
     def __init__(self, screen, number, score_manager):
-        # Inicjalizuje poziom, jego zasoby, stan i grupy sprite'ów
+        # Inicjalizuje poziom gry, jego stan i wszystkie zasoby
         self.screen = screen
         self.number = number
         self.score_manager = score_manager
         self.score = 0
         self.frame_count = 0
-
 
         self.portal_active = False
         self.portal_timer = 0
@@ -49,10 +47,8 @@ class Level:
         self.captor_spawned = False
         self.captor_spawn_at = random.randint(60, 300)
 
-
         self.audio = get_audio_manager()
         self._setup_audio()
-
 
         self.images = self._load_game_resources()
 
@@ -62,11 +58,9 @@ class Level:
         self.portal_img = self.images['portal']
         self.portal_rect = self.portal_img.get_rect(center=(SCREEN_WIDTH // 2, 60))
 
-
         self.score_img = self.images['score']
         self.allies_img = self.images['allies']
         self.heart_img = self.images['heart']
-
 
         self.shooter_img = self.images['shooter']
         self.enemy_soldier_img = self.images['enemy_soldier']
@@ -74,12 +68,10 @@ class Level:
         self.enemy_helicopter_img = self.images['enemy_helicopter']
         self.captor_img = self.images['captor']
 
-
         self.ally_soldier_img = self.images['ally_soldier']
         self.ally_tank_img = self.images['ally_tank']
         self.ally_helicopter_img = self.images['ally_helicopter']
-        self.ally_bullet_img = self.images['bullet']  # lub self.images['bullet'] jeśli to jest właściwy
-
+        self.ally_bullet_img = self.images['bullet']
 
         self.groups = self._create_sprite_groups()
 
@@ -90,19 +82,18 @@ class Level:
         self.allies = self.groups['allies']
         self.explosions = self.groups['explosions']
 
-
         self.player = self._create_player()
         self.crosshair = self._create_crosshair()
         self._spawn_enemies()
 
     def _setup_audio(self):
-        # Konfiguruje system audio i ładuje dźwięki
+        # Ładuje i odtwarza dźwięki poziomu
         sounds_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'sounds')
         self.audio.load_all_game_sounds(sounds_dir)
         self.audio.play_background_music('background_audio')
 
     def _load_game_resources(self):
-        # Ładuje wszystkie grafiki potrzebne na poziomie
+        # Ładuje i przygotowuje wszystkie obrazy i zasoby graficzne
         loader = ImageLoader()
         images = {
             'player': loader.load('genesis.png', (60, 60)),
@@ -110,26 +101,21 @@ class Level:
             'enemy_bullet': loader.load('bullet.png', (15, 15)),
             'portal': loader.load('portal.png', (80, 80)),
             'explosion': loader.load('explosion.png', (32, 32)),
-
             'score': loader.load('score.png', (28, 28)),
             'allies': loader.load('allies.png', (28, 28)),
             'heart': loader.load('heart.png', (28, 28)),
-
             'shooter': loader.load('shooter.png', (60, 60)),
             'enemy_soldier': loader.load('enemy_soldier.png', (60, 60)),
             'enemy_tank': loader.load('enemy_tank.png', (60, 60)),
             'enemy_helicopter': loader.load('enemy_helicopter.png', (60, 60)),
             'captor': loader.load('captor.png', (60, 60)),
-
             'ally_soldier': loader.load('ally_soldier.png', (60, 60)),
             'ally_tank': loader.load('ally_tank.png', (60, 60)),
             'ally_helicopter': loader.load('ally_helicopter.png', (60, 60))
         }
 
-
         bg_file = f'field_{self.number}.png'
         images['background'] = loader.load(bg_file, (SCREEN_WIDTH, SCREEN_HEIGHT))
-
 
         Explosion.images = [images['explosion'],
                             pygame.transform.flip(images['explosion'], 1, 1)]
@@ -137,7 +123,7 @@ class Level:
         return images
 
     def _create_sprite_groups(self):
-        # Tworzy grupy sprite'ów wykorzystywane w grze
+        #Tworzy grupy sprite'ów wykorzystywane w grze
         return {
             'bullets': pygame.sprite.Group(),
             'enemy_bullets': pygame.sprite.Group(),
@@ -148,7 +134,7 @@ class Level:
         }
 
     def _create_player(self):
-        # Tworzy i zwraca obiekt gracza
+        # Tworzy i zwraca instancję gracza
         player = Player((SCREEN_WIDTH // 2, SCREEN_HEIGHT - 100),
                         self.images['player'],
                         self.images['bullet'])
@@ -156,14 +142,14 @@ class Level:
         return player
 
     def _create_crosshair(self):
-        # Tworzy i zwraca celownik przypisany do gracza
+        # Tworzy celownik powiązany z graczem
         crosshair = Crosshair((SCREEN_WIDTH // 2, SCREEN_HEIGHT - 250))
         crosshair.player = self.player
         self.player.crosshair = crosshair
         return crosshair
 
     def _spawn_enemies(self):
-        # Tworzy i dodaje wrogów na poziomie w ustalonych pozycjach
+        # Tworzy i rozmieszcza wrogów na planszy
         shooter_positions = [(SCREEN_WIDTH // 5 * i, 100) for i in range(1, 5)]
         for pos in shooter_positions:
             self.enemies.add(Shooter(
@@ -171,7 +157,7 @@ class Level:
                 self.shooter_img,
                 self.player,
                 self.enemy_bullets,
-                bullet_sprite=self.enemy_bullet_img  # ZMIENIONE
+                bullet_sprite=self.enemy_bullet_img
             ))
 
 
@@ -184,7 +170,7 @@ class Level:
             x = 50 + (i * 70) % (SCREEN_WIDTH - 100)
             y = 150 + (i // 10) * 60
 
-            if i % 5 == 4 and helicopter_positions:
+            if i % 3 == 0 and helicopter_positions:
                 self.enemies.add(Helicopter(
                     helicopter_positions.pop(),
                     self.enemy_helicopter_img,
@@ -208,7 +194,7 @@ class Level:
                 ))
 
     def _draw_hud(self):
-        # Rysuje elementy interfejsu HUD (wynik, sojusznicy, życie)
+        # Wyświetla interfejs gracza (wynik, sojusznicy, życie)
         font = pygame.font.SysFont("Arial", 24)
 
         hud_y = 10
@@ -216,7 +202,8 @@ class Level:
 
         score_x = 10
         self.screen.blit(self.score_img, (score_x, hud_y))
-        score_text = font.render(f"{self.score}", True, (255, 255, 255))
+        total_score = self.score_manager.get_current_score() + self.score
+        score_text = font.render(f"{total_score}", True, (255, 255, 255))
         self.screen.blit(score_text, (score_x + text_offset, hud_y + 2))
 
         allies_x = 150
@@ -230,7 +217,7 @@ class Level:
         self.screen.blit(lives_text, (lives_x + text_offset, hud_y + 2))
 
     def _draw_portal(self):
-        # Rysuje portal z efektem pulsowania, jeśli jest aktywny
+        # Wyświetla aktywny portal z efektem pulsowania
         if self.portal_active:
             pulse = abs(pygame.time.get_ticks() % 2000 - 1000) / 1000.0
             alpha = int(128 + 127 * pulse)
@@ -240,7 +227,7 @@ class Level:
             self.screen.blit(portal_surface, self.portal_rect)
 
     def _draw(self):
-        # Rysuje wszystkie elementy poziomu na ekranie
+        # Renderuje wszystkie elementy gry na ekranie
         self.screen.blit(self.bg_img, (0, 0))
 
         self.player.draw(self.screen)
@@ -259,7 +246,7 @@ class Level:
         pygame.display.flip()
 
     def _update_logic(self):
-        # Aktualizuje logikę gry, wykrywa kolizje i zarządza zdarzeniami
+        # Obsługuje logikę gry, kolizje i stan poziomu
         self.player.update()
         self.crosshair.update()
         self.bullets.update()
@@ -269,7 +256,6 @@ class Level:
         self.enemies.update()
         self.explosions.update()
 
-        #
         for captor in [e for e in self.enemies if isinstance(e, Captor)]:
             hit_allies = pygame.sprite.spritecollide(captor, self.allies, dokill=True)
             if hit_allies:
@@ -277,6 +263,7 @@ class Level:
                 explosion = Explosion(captor.rect.center)
                 self.explosions.add(explosion)
 
+        # 1) pociski gracza i sojuszników vs wrogowie
         for group, pts in [(self.bullets, 10), (self.ally_bullets, 5)]:
             for b in list(group):
                 hits = pygame.sprite.spritecollide(b, self.enemies, False)
@@ -284,11 +271,13 @@ class Level:
                     explosion = Explosion(enemy.rect.center)
                     self.explosions.add(explosion)
 
+
                     if isinstance(enemy, Captor):
                         enemy.take_damage()
                         if enemy.hp <= 0:
                             enemy.kill()
                             self.score += 50
+
                     elif isinstance(enemy, Shooter):
                         enemy.kill()
                         self.score += pts
@@ -308,6 +297,7 @@ class Level:
 
                     self.audio.play_sound('explosion_audio')
 
+        # 2) wrogie pociski vs gracz
         for eb in list(self.enemy_bullets):
             if pygame.sprite.collide_rect(eb, self.player):
                 explosion = Explosion(eb.rect.center)
@@ -315,28 +305,30 @@ class Level:
                 eb.kill()
                 self.player.hp -= 1
                 if self.player.hp <= 0:
+                    self.score_manager.add_score(self.score)
                     self.audio.stop_background_music()
                     self.audio.play_sound('player_die')
                     pygame.time.wait(1000)
                     self.audio.play_sound('game_over_audio')
                     return "game_over"
 
+        # 3) bezpośredni kontakt gracz–wróg
         if any(pygame.sprite.collide_mask(self.player, e) for e in self.enemies):
-            explosion = Explosion(self.player.rect.center)
-            self.explosions.add(explosion)
+            self.score_manager.add_score(self.score)
             self.audio.stop_background_music()
             self.audio.play_sound('player_die')
             pygame.time.wait(1000)
             self.audio.play_sound('game_over_audio')
             return "game_over"
 
+        # 4) portal i zakończenie poziomu
         if not self.portal_active:
             shooters_left = [e for e in self.enemies if isinstance(e, Shooter)]
             if len(shooters_left) == 0 and not self.levelup_played:
                 self.audio.play_sound('levelup_audio')
                 self.levelup_played = True
 
-            if not any(isinstance(e, Shooter) for e in self.enemies):
+            if len(self.enemies) == 0:
                 self.portal_active = True
 
         if self.portal_active and self.player.rect.colliderect(self.portal_rect):
@@ -351,7 +343,7 @@ class Level:
         return "continue"
 
     def run(self,unit_count):
-        # Główna pętla gry, obsługuje zdarzenia, logikę i rysowanie
+        # Główna pętla poziomu – przetwarza input, aktualizuje stan i rysuje
         clock = pygame.time.Clock()
 
         while True:
